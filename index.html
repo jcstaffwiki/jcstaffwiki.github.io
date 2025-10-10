@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>J.C.STAFF 资料库</title>
+  <link rel="stylesheet" href="assets/styles.css?v=20251010e" />
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+  <!-- 顶部导航 -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <i class="fas fa-film logo-icon" aria-hidden="true"></i>
+          <div class="logo-text">J.C.STAFF资料库</div>
+        </div>
+        <nav aria-label="主导航">
+          <ul>
+            <li><a href="#/overview" data-view="overview" class="active">公司概览</a></li>
+            <li><a href="#/works" data-view="works">作品库</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 公司概览 -->
+    <section id="view-overview" class="view">
+      <section class="section">
+        <h2 class="section-title">公司概览</h2>
+        <div class="overview-content">
+          <div class="company-info">
+            <h3>公司信息</h3>
+            <div class="info-item"><i class="fas fa-building info-icon"></i><div><div class="info-label">公司名称</div><div class="info-value">株式会社J.C.STAFF (Japan Creative Staff)</div></div></div>
+            <div class="info-item"><i class="fas fa-calendar-alt info-icon"></i><div><div class="info-label">成立时间</div><div class="info-value">1986年1月</div></div></div>
+            <div class="info-item"><i class="fas fa-user-tie info-icon"></i><div><div class="info-label">代表董事</div><div class="info-value">宫田知行</div></div></div>
+            <div class="info-item"><i class="fas fa-map-marker-alt info-icon"></i><div><div class="info-label">总部地址</div><div class="info-value">日本东京都武藏野市境二丁目14番1号</div></div></div>
+            <div class="info-item"><i class="fas fa-users info-icon"></i><div><div class="info-label">员工人数</div><div class="info-value">约235名（正社员198名）</div></div></div>
+          </div>
+          <div class="company-info">
+            <h3>公司简介</h3>
+            <p>J.C.STAFF是一家日本动画制作公司，创立于1986年1月。</p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- 作品库 -->
+    <section id="view-works" class="view" hidden>
+      <section class="section">
+        <h2 class="section-title">作品库</h2>
+
+        <div class="filters">
+          <!-- 搜索 -->
+          <div class="search-box">
+            <i class="fas fa-search" aria-hidden="true"></i>
+            <label class="sr-only" for="search-input">搜索作品</label>
+            <input type="text" id="search-input" placeholder="搜索作品…（标题）" autocomplete="off" />
+          </div>
+
+          <!-- 下拉：type（带说明） -->
+          <div class="filter-field">
+            <div class="filter-label">作品形式</div>
+            <label class="sr-only" for="filter-type">筛选作品形式</label>
+            <select id="filter-type" class="filter-select" aria-label="作品形式筛选">
+              <option value="all" selected>全部</option>
+              <option value="TV">TV</option>
+              <option value="剧场版">剧场版</option>
+              <option value="OVA">OVA</option>
+              <option value="OAD">OAD</option>
+              <option value="WEB">WEB</option>
+              <option value="MV">MV</option>
+              <option value="其他">其他</option>
+            </select>
+          </div>
+
+          <!-- 下拉：sourceCategory（带说明） -->
+          <div class="filter-field">
+            <div class="filter-label">来源类型</div>
+            <label class="sr-only" for="filter-source">筛选来源类型</label>
+            <select id="filter-source" class="filter-select" aria-label="来源类型筛选">
+              <option value="all" selected>全部</option>
+              <option value="轻改">轻改</option>
+              <option value="漫改">漫改</option>
+              <option value="游戏改">游戏改</option>
+              <option value="原创">原创</option>
+            </select>
+          </div>
+
+          <!-- 排序 -->
+          <button id="sort-toggle" class="sort-toggle" aria-pressed="true">从新到旧</button>
+        </div>
+
+        <div id="works-container" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <!-- 作品详情 -->
+    <section id="view-work" class="view" hidden>
+      <section class="section">
+        <a href="#/works" class="back-link">← 返回作品库</a>
+
+        <div class="work-detail">
+          <!-- 标题 + 副标题（原名） -->
+          <h1 id="work-page-title" class="work-page-title"></h1>
+          <p id="work-subtitle" class="work-subtitle" hidden></p>
+
+          <div class="work-detail-header">
+            <!-- 左：基本信息 -->
+            <div class="brief-card" id="brief-card">
+              <div class="brief-top">
+                <h2 class="block-title">基本信息</h2>
+                <div class="badge-row" id="work-badges"></div>
+                <p id="work-episodes" class="kv-line" hidden></p>
+                <p id="work-premiere" class="kv-line" hidden></p>
+              </div>
+              <div class="brief-bottom">
+                <div id="work-links-inline" class="info-links"></div>
+                <p id="work-copyright" class="copyright" hidden></p>
+              </div>
+            </div>
+
+            <!-- 右：封面 -->
+            <div id="work-cover" class="work-cover"></div>
+          </div>
+
+          <!-- 下：制作人员 -->
+          <div class="work-sections">
+            <div id="work-staff-block" class="info-block" hidden>
+              <h3>主要制作人员</h3>
+              <ul id="work-staff"></ul>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="assets/app.js?v=20251010e"></script>
+</body>
+</html>
