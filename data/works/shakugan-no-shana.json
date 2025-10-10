@@ -1,0 +1,20 @@
+{
+  "slug": "shakugan-no-shana",
+  "title": "魔法的夏娜",
+  "type": "TV",
+  "seasonYear": 2022,
+  "season": "冬",
+  "premiere": "2009.10.03",
+  "episodes": 24,
+  "staff": ["监督：锦织博","系列构成：赤星政尚"],
+  "links": {
+    "sakugabooru": "https://www.sakugabooru.com/post?tags=Toaru+Majutsu+no+Index",
+    "bangumi": "https://bgm.tv/subject/123"
+  },
+  "color": "#5352ed",
+  "cn_streaming": [
+    {
+      "title": "暂无"
+    }
+  ]
+}
