@@ -4,12 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>J.C.STAFF 资料库</title>
-  <link rel="stylesheet" href="assets/styles.css?v=20251010e" />
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+  <link rel="stylesheet" href="assets/styles.css?v=20251014e" />
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com/" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
 </head>
 <body>
-  <!-- 顶部导航 -->
   <header class="site-header">
     <div class="container">
       <div class="header-content">
@@ -28,18 +27,47 @@
   </header>
 
   <main class="container">
-    <!-- 公司概览 -->
     <section id="view-overview" class="view">
       <section class="section">
         <h2 class="section-title">公司概览</h2>
         <div class="overview-content">
           <div class="company-info">
             <h3>公司信息</h3>
-            <div class="info-item"><i class="fas fa-building info-icon"></i><div><div class="info-label">公司名称</div><div class="info-value">株式会社J.C.STAFF (Japan Creative Staff)</div></div></div>
-            <div class="info-item"><i class="fas fa-calendar-alt info-icon"></i><div><div class="info-label">成立时间</div><div class="info-value">1986年1月</div></div></div>
-            <div class="info-item"><i class="fas fa-user-tie info-icon"></i><div><div class="info-label">代表董事</div><div class="info-value">宫田知行</div></div></div>
-            <div class="info-item"><i class="fas fa-map-marker-alt info-icon"></i><div><div class="info-label">总部地址</div><div class="info-value">日本东京都武藏野市境二丁目14番1号</div></div></div>
-            <div class="info-item"><i class="fas fa-users info-icon"></i><div><div class="info-label">员工人数</div><div class="info-value">约235名（正社员198名）</div></div></div>
+            <div class="info-item">
+              <i class="fas fa-building info-icon"></i>
+              <div>
+                <div class="info-label">公司名称</div>
+                <div class="info-value">株式会社J.C.STAFF (Japan Creative Staff)</div>
+              </div>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-calendar-alt info-icon"></i>
+              <div>
+                <div class="info-label">成立时间</div>
+                <div class="info-value">1986年1月</div>
+              </div>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-user-tie info-icon"></i>
+              <div>
+                <div class="info-label">代表董事</div>
+                <div class="info-value">宫田知行</div>
+              </div>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-map-marker-alt info-icon"></i>
+              <div>
+                <div class="info-label">总部地址</div>
+                <div class="info-value">日本东京都武藏野市境二丁目14番1号</div>
+              </div>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-users info-icon"></i>
+              <div>
+                <div class="info-label">员工人数</div>
+                <div class="info-value">约235名（正社员198名）</div>
+              </div>
+            </div>
           </div>
           <div class="company-info">
             <h3>公司简介</h3>
@@ -49,20 +77,29 @@
       </section>
     </section>
 
-    <!-- 作品库 -->
     <section id="view-works" class="view" hidden>
       <section class="section">
         <h2 class="section-title">作品库</h2>
 
         <div class="filters">
-          <!-- 搜索 -->
-          <div class="search-box">
-            <i class="fas fa-search" aria-hidden="true"></i>
-            <label class="sr-only" for="search-input">搜索作品</label>
-            <input type="text" id="search-input" placeholder="搜索作品…（标题）" autocomplete="off" />
+          <div class="search-container">
+            <div class="search-box" id="search-box-1">
+              <i class="fas fa-search" aria-hidden="true"></i>
+              <label class="sr-only" for="search-input-1">搜索作品或人名 1</label>
+              <input type="text" id="search-input-1" placeholder="搜索作品或人名…" autocomplete="off" />
+              <i class="fas fa-circle-xmark clear-icon" id="search-clear-1" hidden title="清除搜索内容"></i>
+              <div id="search-dropdown-1" class="search-dropdown" hidden></div>
+            </div>
+            
+            <div class="search-box" id="search-box-2">
+              <i class="fas fa-search" aria-hidden="true"></i>
+              <label class="sr-only" for="search-input-2">搜索作品或人名 2</label>
+              <input type="text" id="search-input-2" placeholder="搜索作品或人名…" autocomplete="off" />
+              <i class="fas fa-circle-xmark clear-icon" id="search-clear-2" hidden title="清除搜索内容"></i>
+              <div id="search-dropdown-2" class="search-dropdown" hidden></div>
+            </div>
           </div>
 
-          <!-- 下拉：type（带说明） -->
           <div class="filter-field">
             <div class="filter-label">作品形式</div>
             <label class="sr-only" for="filter-type">筛选作品形式</label>
@@ -74,11 +111,11 @@
               <option value="OAD">OAD</option>
               <option value="WEB">WEB</option>
               <option value="MV">MV</option>
+              <option value="制作协力">制作协力</option>
               <option value="其他">其他</option>
             </select>
           </div>
 
-          <!-- 下拉：sourceCategory（带说明） -->
           <div class="filter-field">
             <div class="filter-label">来源类型</div>
             <label class="sr-only" for="filter-source">筛选来源类型</label>
@@ -91,7 +128,6 @@
             </select>
           </div>
 
-          <!-- 排序 -->
           <button id="sort-toggle" class="sort-toggle" aria-pressed="true">从新到旧</button>
         </div>
 
@@ -99,47 +135,78 @@
       </section>
     </section>
 
-    <!-- 作品详情 -->
     <section id="view-work" class="view" hidden>
       <section class="section">
         <a href="#/works" class="back-link">← 返回作品库</a>
 
         <div class="work-detail">
-          <!-- 标题 + 副标题（原名） -->
           <h1 id="work-page-title" class="work-page-title"></h1>
           <p id="work-subtitle" class="work-subtitle" hidden></p>
 
           <div class="work-detail-header">
-            <!-- 左：基本信息 -->
             <div class="brief-card" id="brief-card">
               <div class="brief-top">
                 <h2 class="block-title">基本信息</h2>
                 <div class="badge-row" id="work-badges"></div>
                 <p id="work-episodes" class="kv-line" hidden></p>
                 <p id="work-premiere" class="kv-line" hidden></p>
+                <div id="work-links-inline" class="info-links"></div>
               </div>
               <div class="brief-bottom">
-                <div id="work-links-inline" class="info-links"></div>
                 <p id="work-copyright" class="copyright" hidden></p>
               </div>
             </div>
 
-            <!-- 右：封面 -->
             <div id="work-cover" class="work-cover"></div>
           </div>
 
-          <!-- 下：制作人员 -->
           <div class="work-sections">
-            <div id="work-staff-block" class="info-block" hidden>
-              <h3>主要制作人员</h3>
-              <ul id="work-staff"></ul>
+            
+            <div id="work-staff-header-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;" hidden>
+                <h3 id="work-staff-dynamic-heading" style="margin:0; font-size:1.3rem; font-weight:800; color:#fff;">主要制作人员</h3>
+                
+                <div class="search-box" id="work-staff-search-box" style="flex: 0 1 240px; min-width: 180px;">
+                    <i class="fas fa-search" aria-hidden="true" style="font-size: 0.9rem; left: 16px;"></i>
+                    <label class="sr-only" for="work-staff-search-input">在本作中筛选人员</label>
+                    <input type="text" id="work-staff-search-input" placeholder="在本作中筛选人员…" autocomplete="off" style="padding: 8px 36px 8px 36px; font-size: 0.85rem;" />
+                    <i class="fas fa-circle-xmark clear-icon" id="work-staff-search-clear" hidden title="清除搜索内容" style="font-size: 1rem;"></i>
+                    <div id="work-staff-search-dropdown" class="search-dropdown" hidden></div>
+                </div>
             </div>
+
+            <div id="work-staff-normal-view">
+                <div id="work-staff-block" class="info-block" hidden style="margin-top: 0;">
+                  <div id="work-staff-2col" class="staff-2col">
+                    <ul id="work-staff-col-1" class="staff-col"></ul>
+                    <ul id="work-staff-col-2" class="staff-col"></ul>
+                  </div>
+                </div>
+
+                <div id="work-detailed-staff-block" class="info-block" hidden>
+                  <h3 id="work-detailed-staff-heading" style="margin-top: 32px;">详细制作人员</h3>
+                </div>
+            </div>
+
+            <div id="work-staff-filtered-view" class="info-block" hidden>
+            </div>
+
           </div>
+          </div>
+      </section>
+    </section>
+
+    <section id="view-person" class="view" hidden>
+      <section class="section">
+        <a href="#" id="person-back" class="back-link">← 返回</a>
+        <div class="work-detail">
+          <h1 id="person-name" class="work-page-title"></h1>
+          <p id="person-aliases" class="work-subtitle" hidden></p>
+          <div id="person-bio" class="info-block"></div>
         </div>
       </section>
     </section>
   </main>
 
-  <script src="assets/app.js?v=20251010e"></script>
+  <script src="assets/app.js?v=20251014e"></script>
 </body>
 </html>
