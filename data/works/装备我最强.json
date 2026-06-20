@@ -1,56 +1,77 @@
 {
-  "slug": "装备我最强",
-  "seasonYear": 2026,
-  "season": "秋",
-  "title": "装备我最强",
-  "title_original": "テムパル～アイテムの力～",
-  "type": "TV",
-  "episodes": "未开播",
-  "premiere": "2026.10",
-  "links": {
-    "official": "https://tempal-anime.net/",
-    "bangumi": "https://bangumi.tv/subject/657656"
-  },
-  "cn_streaming": null,
-  "copyright": "©TEMPAL Animation Partners",
-  "production_info": {
-    "main_staff_columns": [
-      [
-        [
-          "监督",
-          "河野亜矢子"
-        ],
-        [
-          "角色设计",
-          "谷川亮介"
-        ],
-        [
-          "音乐",
-          "藤澤慶昌"
-        ],
-        [
-          "制片",
-          "EGG FIRM"
-        ]
-      ],
-      [
-        [
-          "系列构成",
-          "猪原健太"
-        ],
-        [
-          "音响监督",
-          "岩浪美和"
-        ],
-        [
-          "音乐制作",
-          "ポニーキャニオン"
-        ],
-        [
-          "动画制作",
-          "J.C.STAFF"
-        ]
-      ]
-    ]
-  }
+    "slug":  "装备我最强",
+    "seasonYear":  2026,
+    "season":  "秋",
+    "title":  "装备我最强",
+    "title_original":  "テムパル～アイテムの力～",
+    "type":  "TV",
+    "sourceCategory":  "其他",
+    "episodes":  "未开播",
+    "premiere":  "2026.10",
+    "links":  {
+                  "official":  "https://tempal-anime.net/",
+                  "bangumi":  "https://bangumi.tv/subject/657656"
+              },
+    "cn_streaming":  null,
+    "copyright":  "©TEMPAL Animation Partners",
+    "production_info":  {
+                            "main_staff_columns":  [
+                                                       [
+                                                           [
+                                                               "监督",
+                                                               "河野亜矢子"
+                                                           ],
+                                                           [
+                                                               "角色设计",
+                                                               "谷川亮介"
+                                                           ],
+                                                           [
+                                                               "音乐",
+                                                               "藤澤慶昌"
+                                                           ],
+                                                           [
+                                                               "制片",
+                                                               "EGG FIRM"
+                                                           ]
+                                                       ],
+                                                       [
+                                                           [
+                                                               "系列构成",
+                                                               "猪原健太"
+                                                           ],
+                                                           [
+                                                               "音响监督",
+                                                               "岩浪美和"
+                                                           ],
+                                                           [
+                                                               "音乐制作",
+                                                               "ポニーキャニオン"
+                                                           ],
+                                                           [
+                                                               "动画制作",
+                                                               "J.C.STAFF"
+                                                           ]
+                                                       ]
+                                                   ]
+                        },
+    "detailed_staff":  {
+                           "overview_headers":  [
+                                                    "脚本",
+                                                    "分镜",
+                                                    "演出",
+                                                    "作画监督",
+                                                    "制作进行"
+                                                ],
+                           "episodes":  [
+                                            {
+                                                "label":  "第1话",
+                                                "staff":  [
+                                                              [
+                                                                  "脚本",
+                                                                  ""
+                                                              ]
+                                                          ]
+                                            }
+                                        ]
+                       }
 }
