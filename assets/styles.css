@@ -185,7 +185,7 @@ nav a:hover,nav a.active{background:rgba(106,17,203,.25)}
 .work-page-title{text-align:center;font-size:2rem;margin:6px 0 6px}
 .work-subtitle{text-align:center;color:#a7a7a7;font-size:1rem;margin:-2px 0 18px}
 
-.work-detail-header{display:grid;grid-template-columns:minmax(420px,1fr) 300px;gap:12px;align-items:stretch;max-width:900px;margin:0 auto 8px}
+.work-detail-header{display:grid;grid-template-columns:minmax(420px,1fr) 300px;gap:12px;align-items:start;max-width:900px;margin:0 auto 8px}
 
 /* 基本信息卡片 */
 .brief-card{
@@ -209,17 +209,20 @@ nav a:hover,nav a.active{background:rgba(106,17,203,.25)}
 .kv-line{margin:0 0 14px 0;color:#d7d7d7;font-size:1.05rem;}
 .kv-line b{color:#fff;margin-right:6px}
 
-.info-links{display:flex;align-items:flex-start;gap:12px;margin-top:0;}
-.links-col{flex:1;}
+.info-links{display:grid;grid-template-columns:max-content max-content;gap:34px;margin-top:0;align-items:start;justify-content:start;max-width:100%;}
+.links-col{min-width:0;}
+.info-links > .links-col:only-child{grid-column:1/-1;}
+.links-list-columns{display:grid;grid-template-columns:repeat(2,max-content);gap:0 26px;align-items:start;max-width:100%;}
+.links-list,#work-cn-streaming{margin:0;padding-left:1.15em;}
 .links-col h3 {font-size:1.05rem;color:#fff;font-weight:700;margin-bottom:8px;}
 
 .brief-bottom{margin-top:16px}
 .copyright{color:#a7a7a7;font-size:.85rem;text-align:center;}
 
 .work-cover{
-  width:100%;aspect-ratio:100/142;border-radius:12px;overflow:hidden; background:#222;background-size:cover;background-position:center; box-shadow:0 10px 20px rgba(0,0,0,.25)
+  width:100%;aspect-ratio:100/142;border-radius:12px;overflow:hidden; background:#222;background-size:cover;background-position:center; box-shadow:0 10px 20px rgba(0,0,0,.25);align-self:start;
 }
-.work-cover img{width:100%;height:100%;object-fit:contain;object-position:center}
+.work-cover img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
 
 .work-sections{max-width:900px;margin:32px auto 0}
 
@@ -426,10 +429,14 @@ nav a:hover,nav a.active{background:rgba(106,17,203,.25)}
 
 @media (max-width:900px){ .work-detail-header{grid-template-columns:1fr;max-width:720px} .work-sections{max-width:720px} }
 @media (max-width:720px){ .staff-2col{ grid-template-columns:1fr; } }
+@media (max-width:620px){
+  .info-links{grid-template-columns:1fr;gap:14px;}
+  .links-list-columns{grid-template-columns:1fr;gap:0;}
+}
 
-#work-staff li,#work-links li,#work-cn-streaming li{margin:6px 0;color:#d7d7d7;font-size:0.95rem;}
-#work-links a,#work-cn-streaming a{color:#b9d4ff;text-decoration:none}
-#work-links a:hover,#work-cn-streaming a:hover{text-decoration:underline}
+#work-staff li,.links-list li,#work-cn-streaming li{margin:4px 0;color:#d7d7d7;font-size:0.95rem;}
+.links-list a,#work-cn-streaming a{color:#b9d4ff;text-decoration:none}
+.links-list a:hover,#work-cn-streaming a:hover{text-decoration:underline}
 
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .empty-hint{ text-align:center; font-weight:800; font-size:1.6rem; padding:56px 0; color:var(--text); opacity:0.95; }

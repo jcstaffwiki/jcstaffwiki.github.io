@@ -661,8 +661,16 @@ async function renderWorkDetail(slug){
   const full = formatFullDate(w);
   if(full){ setKeyValueLine(dateEl, "首播日期：", full); } else dateEl.hidden = true;
 
-  const linkNames = { official:"官方网站", bangumi:"bangumi", moegirl:"萌娘百科", seesaa:"Seesaawiki", sakugabooru:"SAKUGABOORU" };
-  const order = ["official","bangumi","moegirl","seesaa","sakugabooru"];
+  const linkNames = {
+    official: "官方网站",
+    twitter: "推特",
+    bangumi: "bangumi",
+    moegirl: "萌娘百科",
+    seesaa: "Seesaawiki",
+    keyframe_staff_list: "KeyFrame Staff List",
+    sakugabooru: "SAKUGABOORU"
+  };
+  const order = ["official","twitter","bangumi","moegirl","seesaa","keyframe_staff_list","sakugabooru"];
   linksInline.innerHTML = "";
 
   const isPlain = isPlainObject(w.links);
@@ -680,15 +688,29 @@ async function renderWorkDetail(slug){
 
   if(linksShouldShow || cnShouldShow){
     if(linksShouldShow){
-      const col1 = document.createElement("div"); col1.className = "links-col";
+      const col1 = document.createElement("div"); col1.className = "links-col related-links-col";
       const h1 = document.createElement("h3"); h1.textContent = "相关链接";
-      const ul1 = document.createElement("ul"); ul1.id = "work-links";
-      if(linksIsNull) appendTextItem(ul1, "暂无");
-      else list.forEach(({url,title})=> appendExternalLinkItem(ul1, title, url));
-      col1.appendChild(h1); col1.appendChild(ul1); linksInline.appendChild(col1);
+      const columnsWrap = document.createElement("div");
+      columnsWrap.className = "links-list-columns";
+      const maxLinksPerCol = list.length > 8 ? Math.ceil(list.length / 2) : 4;
+      const chunks = linksIsNull ? [[]] : [];
+      if(!linksIsNull){
+        for(let i = 0; i < list.length; i += maxLinksPerCol){
+          chunks.push(list.slice(i, i + maxLinksPerCol));
+        }
+      }
+      chunks.forEach((chunk, index) => {
+        const ul = document.createElement("ul");
+        ul.className = "links-list";
+        if(index === 0) ul.id = "work-links";
+        if(linksIsNull) appendTextItem(ul, "暂无");
+        else chunk.forEach(({url,title})=> appendExternalLinkItem(ul, title, url));
+        columnsWrap.appendChild(ul);
+      });
+      col1.appendChild(h1); col1.appendChild(columnsWrap); linksInline.appendChild(col1);
     }
     if(cnShouldShow){
-      const col2 = document.createElement("div"); col2.className = "links-col";
+      const col2 = document.createElement("div"); col2.className = "links-col cn-links-col";
       const h2 = document.createElement("h3"); h2.textContent = "中国大陆正版";
       const ul2 = document.createElement("ul"); ul2.id = "work-cn-streaming";
       if(cnIsNull) appendTextItem(ul2, "暂无");
