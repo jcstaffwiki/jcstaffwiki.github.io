@@ -970,6 +970,8 @@ async function renderWorkDetail(slug){
       const jumpInput = detailedBlock.querySelector('.episode-jump-input');
       const jumpToggle = detailedBlock.querySelector('.episode-jump-toggle');
       const jumpMenu = detailedBlock.querySelector('.episode-jump-menu');
+      let jumpMenuScrollTop = 0;
+      let activeJumpTarget = "ep-tab-overview";
 
       const hideJumpMenu = () => {
           if (!jumpMenu) return;
@@ -996,10 +998,26 @@ async function renderWorkDetail(slug){
 
           jumpMenu.querySelectorAll('.episode-jump-option').forEach(option => {
               option.addEventListener('click', () => {
+                  jumpMenuScrollTop = jumpMenu.scrollTop;
                   activateTab(option.dataset.target);
                   hideJumpMenu();
-                  if (jumpInput) jumpInput.focus();
+                  if (jumpInput) jumpInput.blur();
               });
+          });
+
+          requestAnimationFrame(() => {
+              if (!jumpMenu || jumpMenu.hidden) return;
+              if (q) {
+                  jumpMenu.scrollTop = 0;
+              } else if (jumpMenuScrollTop > 0) {
+                  jumpMenu.scrollTop = jumpMenuScrollTop;
+              } else {
+                  const selected = Array.from(jumpMenu.querySelectorAll('.episode-jump-option'))
+                      .find(option => option.dataset.target === activeJumpTarget);
+                  if (selected) {
+                      jumpMenu.scrollTop = Math.max(0, selected.offsetTop - (jumpMenu.clientHeight / 2) + (selected.offsetHeight / 2));
+                  }
+              }
           });
       };
 
@@ -1008,6 +1026,7 @@ async function renderWorkDetail(slug){
           const targetContent = document.getElementById(target);
           if (!targetBtn || !targetContent) return;
 
+          activeJumpTarget = target;
           tabBtns.forEach(b => b.classList.remove('active'));
           tabContents.forEach(c => c.style.display = 'none');
           targetBtn.classList.add('active');
@@ -1024,6 +1043,9 @@ async function renderWorkDetail(slug){
 
       if (jumpInput && jumpToggle && jumpMenu) {
           jumpInput.value = "总览";
+          jumpMenu.addEventListener('scroll', () => {
+              jumpMenuScrollTop = jumpMenu.scrollTop;
+          });
           jumpInput.addEventListener('input', () => renderJumpMenu(jumpInput.value, false));
           jumpInput.addEventListener('focus', () => renderJumpMenu(jumpInput.value, !jumpInput.value.trim()));
           jumpInput.addEventListener('keydown', (e) => {
@@ -1047,7 +1069,6 @@ async function renderWorkDetail(slug){
               if (jumpMenu.hidden) renderJumpMenu("", true);
               else hideJumpMenu();
           });
-          jumpToggle.addEventListener('mouseenter', () => renderJumpMenu("", true));
 
           document.addEventListener('click', (e) => {
               if (jumpBox && !jumpBox.contains(e.target)) hideJumpMenu();

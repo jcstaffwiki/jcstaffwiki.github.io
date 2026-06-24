@@ -427,8 +427,17 @@ nav a:hover,nav a.active{background:rgba(106,17,203,.25)}
   }
 }
 
-@media (max-width:900px){ .work-detail-header{grid-template-columns:1fr;max-width:720px} .work-sections{max-width:720px} }
+@media (max-width:900px){
+  .work-detail-header{grid-template-columns:minmax(0,1fr) clamp(190px,30vw,240px);max-width:720px}
+  .work-cover{max-width:240px;justify-self:end}
+  .work-sections{max-width:720px}
+}
 @media (max-width:720px){ .staff-2col{ grid-template-columns:1fr; } }
+@media (max-width:680px){
+  .work-detail{padding:18px}
+  .work-detail-header{grid-template-columns:1fr;max-width:520px}
+  .work-cover{width:min(72vw,280px);max-width:280px;justify-self:center}
+}
 @media (max-width:620px){
   .info-links{grid-template-columns:1fr;gap:14px;}
   .links-list-columns{grid-template-columns:1fr;gap:0;}
