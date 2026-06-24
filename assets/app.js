@@ -492,6 +492,15 @@ function collectMainStaffColumns(work){
   return result;
 }
 
+function hasRealMainStaff(entries){
+  return entries.some(item => {
+    if (!item || item.spacer) return false;
+    const hasRole = String(item.role || "").trim().length > 0;
+    const hasTokens = Array.isArray(item.tokens) && item.tokens.length > 0;
+    return hasRole || hasTokens;
+  });
+}
+
 function setTempPersonLabel(slug,label){ try{ sessionStorage.setItem("personLabel:"+slug, String(label||"")); }catch{} }
 function getTempPersonLabel(slug){ try{ return sessionStorage.getItem("personLabel:"+slug) || ""; }catch{} return ""; }
 function saveWorkScroll(slug){ try{ sessionStorage.setItem("workScroll:"+slug, String(window.scrollY)); }catch{} }
@@ -1035,13 +1044,14 @@ async function renderWorkDetail(slug){
     }
   }
 
-  const hasMain = (col1Entries.length + col2Entries.length) > 0;
+  const hasMain = hasRealMainStaff(col1Entries) || hasRealMainStaff(col2Entries);
   const headerContainer = document.getElementById("work-staff-header-container");
   const dynamicHeading = document.getElementById("work-staff-dynamic-heading");
   const detailedHeading = document.getElementById("work-detailed-staff-heading");
 
   if (hasMain) {
       headerContainer.hidden = false;
+      headerContainer.style.display = "flex";
       dynamicHeading.textContent = "主要制作人员";
       staffBlock.hidden = false;
       if (hasDetailed) {
@@ -1052,12 +1062,14 @@ async function renderWorkDetail(slug){
       }
   } else if (hasDetailed) {
       headerContainer.hidden = false;
+      headerContainer.style.display = "flex";
       dynamicHeading.textContent = "制作人员"; 
       staffBlock.hidden = true;
       detailedBlock.hidden = false;
       if (detailedHeading) detailedHeading.hidden = true; 
   } else {
       headerContainer.hidden = true;
+      headerContainer.style.display = "none";
       staffBlock.hidden = true;
       detailedBlock.hidden = true;
   }
