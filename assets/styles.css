@@ -8,7 +8,7 @@
   --text:#e6e6e6;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
+html,body{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{
   min-height:100vh;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
@@ -25,7 +25,7 @@ body{
 .logo-icon{font-size:1.8rem;color:#ff2e63}
 .logo-text{font-weight:800;font-size:1.4rem;background:linear-gradient(90deg,#6a11cb,#2575fc);-webkit-background-clip:text;background-clip:text;color:transparent}
 nav ul{display:flex;gap:24px;list-style:none}
-nav a{color:var(--text);text-decoration:none;font-weight:700;padding:8px 14px;border-radius:999px}
+nav a{color:var(--text);text-decoration:none;font-weight:700;padding:8px 14px;border-radius:999px;white-space:nowrap;word-break:keep-all}
 nav a:hover,nav a.active{background:rgba(106,17,203,.25)}
 
 /* Sections */
@@ -443,9 +443,77 @@ nav a:hover,nav a.active{background:rgba(106,17,203,.25)}
   .links-list-columns{grid-template-columns:1fr;gap:0;}
 }
 
+@media (max-width:560px){
+  .container{padding:0 12px}
+  .site-header{position:sticky}
+  .header-content{padding:10px 0;gap:8px}
+  .logo{gap:7px;min-width:0}
+  .logo-icon{font-size:1.35rem;flex:0 0 auto}
+  .logo-text{font-size:1.02rem;white-space:nowrap;word-break:keep-all;overflow:hidden;text-overflow:clip}
+  nav ul{gap:4px}
+  nav a{font-size:.88rem;padding:6px 7px}
+
+  .section{padding:30px 0}
+  .section-title{font-size:1.75rem;margin-bottom:26px}
+  .section-title:after{width:64px;height:3px}
+  .filters{gap:10px;margin-bottom:18px}
+  .search-container{gap:8px}
+  .search-box input{min-height:40px;padding:9px 38px}
+  .filter-field{flex:1 1 calc(50% - 8px)}
+  .filter-label{font-size:.76rem}
+  .fancy-btn,.sort-toggle{min-height:38px;padding-top:8px;padding-bottom:8px;font-size:.9rem}
+  .sort-toggle{flex:1 1 100%;border-radius:14px}
+
+  .season-group{margin-bottom:24px}
+  .group-title{font-size:1.35rem;margin:0 0 12px 4px}
+  .works-grid{display:flex;flex-direction:column;gap:12px}
+  .work-card{display:grid;grid-template-columns:82px minmax(0,1fr);min-height:116px;border-radius:12px;box-shadow:0 8px 16px rgba(0,0,0,.14)}
+  .work-card:hover{transform:none}
+  .work-image{width:82px;height:116px}
+  .work-content{min-width:0;padding:12px 12px 10px}
+  .work-title{font-size:1rem;line-height:1.35;margin-bottom:10px}
+  .work-meta{gap:5px}
+  .work-tags-row{gap:5px}
+  .work-tag{font-size:.72rem;padding:3px 8px}
+
+  .back-link{font-size:.9rem;padding:9px 13px;margin-bottom:10px}
+  .work-detail{padding:16px 12px;border-radius:14px}
+  .work-page-title{font-size:1.7rem;line-height:1.24;margin:2px 0 4px}
+  .work-subtitle{font-size:.9rem;margin:0 0 14px}
+  .work-detail-header{max-width:100%;gap:14px}
+  .brief-card{padding:16px;border-radius:12px}
+  .brief-top{justify-content:flex-start}
+  .block-title{font-size:1.18rem;margin-bottom:12px}
+  .badge-row{gap:8px;margin-bottom:12px}
+  .badge{font-size:.76rem;padding:4px 9px}
+  .kv-line{font-size:.92rem;margin-bottom:10px}
+  .links-col h3{font-size:.95rem;margin-bottom:6px}
+  #work-staff li,.links-list li,#work-cn-streaming li{font-size:.86rem;margin:3px 0}
+  .copyright{font-size:.74rem;line-height:1.5}
+  .work-cover{width:min(58vw,210px);max-width:210px;border-radius:12px}
+  .work-sections{margin-top:24px;max-width:100%}
+  #work-staff-header-container{align-items:flex-start !important}
+  #work-staff-dynamic-heading{font-size:1.2rem !important}
+  #work-staff-search-box{flex-basis:100% !important;min-width:0 !important}
+  .staff-2col{gap:6px}
+  .staff-col li{font-size:.9rem;line-height:1.55;margin:4px 0}
+}
+
+@media (max-width:390px){
+  .logo-text{font-size:.9rem}
+  nav a{font-size:.8rem;padding:5px 5px}
+  .work-card{grid-template-columns:72px minmax(0,1fr);min-height:104px}
+  .work-image{width:72px;height:104px}
+  .work-title{font-size:.95rem}
+}
+
 #work-staff li,.links-list li,#work-cn-streaming li{margin:4px 0;color:#d7d7d7;font-size:0.95rem;}
 .links-list a,#work-cn-streaming a{color:#b9d4ff;text-decoration:none}
 .links-list a:hover,#work-cn-streaming a:hover{text-decoration:underline}
+
+@media (max-width:560px){
+  #work-staff li,.links-list li,#work-cn-streaming li{font-size:.86rem;margin:3px 0}
+}
 
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .empty-hint{ text-align:center; font-weight:800; font-size:1.6rem; padding:56px 0; color:var(--text); opacity:0.95; }
