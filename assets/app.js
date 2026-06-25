@@ -739,20 +739,9 @@ async function renderWorkDetail(slug){
 
   const [col1Entries, col2Entries] = collectMainStaffColumns(w);
 
-  const renderCol = (ul, entries)=>{
-    entries.forEach(item => {
-      if (item.spacer) {
-        const li = document.createElement("li");
-        li.style.listStyle = "none"; 
-        li.innerHTML = "&nbsp;";     
-        ul.appendChild(li);
-        return;
-      }
-
+  const appendStaffEntryContent = (target, item) => {
       const {role, tokens} = item;
-      const li = document.createElement("li");
-      const strong = document.createElement("b"); strong.textContent = role ? role + "：" : ""; li.appendChild(strong);
-      
+      const strong = document.createElement("b"); strong.textContent = role ? role + "：" : ""; target.appendChild(strong);
       tokens.forEach(t=>{
         addPersonToWork(t.cleanLabel || t.label, t.slug);
 
@@ -779,13 +768,57 @@ async function renderWorkDetail(slug){
             span.appendChild(rSpan);
         }
 
-        li.appendChild(span);
+        target.appendChild(span);
       });
+  };
+
+  const renderCol = (ul, entries)=>{
+    entries.forEach(item => {
+      if (item.spacer) {
+        const li = document.createElement("li");
+        li.style.listStyle = "none"; 
+        li.innerHTML = "&nbsp;";     
+        ul.appendChild(li);
+        return;
+      }
+
+      const li = document.createElement("li");
+      appendStaffEntryContent(li, item);
       ul.appendChild(li);
     });
   };
 
   renderCol(col1Ul, col1Entries); renderCol(col2Ul, col2Entries);
+  staffBlock?.querySelector(".staff-mobile-grid")?.remove();
+  if (staffBlock) {
+    const mobileGrid = document.createElement("div");
+    mobileGrid.className = "staff-mobile-grid";
+    const maxRows = Math.max(col1Entries.length, col2Entries.length);
+    for (let i = 0; i < maxRows; i++) {
+      const left = col1Entries[i];
+      const right = col2Entries[i];
+      const row = document.createElement("div");
+      row.className = "staff-mobile-row";
+      if (left?.spacer && right?.spacer) {
+        row.classList.add("is-spacer");
+        mobileGrid.appendChild(row);
+        continue;
+      }
+      [left, right].forEach(item => {
+        const cell = document.createElement("div");
+        cell.className = "staff-mobile-cell";
+        if (!item || item.spacer) {
+          cell.classList.add("is-empty");
+          cell.innerHTML = "&nbsp;";
+        } else {
+          appendStaffEntryContent(cell, item);
+        }
+        row.appendChild(cell);
+      });
+      mobileGrid.appendChild(row);
+    }
+    staffBlock.appendChild(mobileGrid);
+  }
   
   const detailedBlock = document.getElementById("work-detailed-staff-block");
   let hasDetailed = false;
@@ -926,7 +959,27 @@ async function renderWorkDetail(slug){
           }
           html += `</tr>`;
       });
-      html += `</tbody></table></div></div>`;
+      html += `</tbody></table></div>`;
+
+      html += `<div class="detailed-mobile-overview">`;
+      ds.episodes.forEach((ep, r) => {
+          let rowsHTML = "";
+          for (let c = 0; c < cols; c++) {
+              const cellHTML = cellMatrix[r][c] || "-";
+              const plainText = cellHTML.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim();
+              if (!plainText || plainText === "-") continue;
+              rowsHTML += `<div class="mobile-overview-row">
+                             <div class="mobile-overview-role">${escapeHTML(tableHeaders[c] || "")}</div>
+                             <div class="mobile-overview-names">${cellHTML}</div>
+                           </div>`;
+          }
+          if (!rowsHTML) rowsHTML = `<div class="mobile-overview-empty">暂无</div>`;
+          html += `<section class="mobile-overview-card">
+                     <h4>${escapeHTML(ep.label || `第${r+1}项`)}</h4>
+                     ${rowsHTML}
+                   </section>`;
+      });
+      html += `</div></div>`;
 
       ds.episodes.forEach((ep, i) => {
           html += `<div class="ep-tab-content" id="ep-tab-${i}" style="display:none;">

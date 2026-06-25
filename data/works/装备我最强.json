@@ -1,8 +1,8 @@
 {
     "slug":  "装备我最强",
+    "title":  "装备我最强",
     "seasonYear":  2026,
     "season":  "秋",
-    "title":  "装备我最强",
     "title_original":  "テムパル～アイテムの力～",
     "type":  "TV",
     "sourceCategory":  "其他",
@@ -10,7 +10,9 @@
     "premiere":  "2026.10",
     "links":  {
                   "official":  "https://tempal-anime.net/",
-                  "bangumi":  "https://bangumi.tv/subject/657656"
+                  "twitter":  "https://x.com/tempal_anime",
+                  "bangumi":  "https://bangumi.tv/subject/657656",
+                  "keyframe_staff_list":  "https://keyframe-staff-list.com/staff/overgeared"
               },
     "cn_streaming":  null,
     "copyright":  "©TEMPAL Animation Partners",
