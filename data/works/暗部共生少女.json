@@ -16,5 +16,53 @@
                   "keyframe_staff_list":  "https://keyframe-staff-list.com/staff/toaru-anbu-no-item"
               },
     "cn_streaming":  null,
-    "copyright":  "©鎌池和馬/KADOKAWA/PROJECT-ITEM"
+    "copyright":  "©鎌池和馬/KADOKAWA/PROJECT-ITEM",
+    "production_info":  {
+                            "main_staff_columns":  [
+                                                       [
+                                                           [
+                                                               "监督",
+                                                               "長井龍雪"
+                                                           ],
+                                                           [
+                                                               "角色设计",
+                                                               "木本茂樹"
+                                                           ],
+                                                           [
+                                                               "色彩设计",
+                                                               "安藤智美"
+                                                           ],
+                                                           [
+                                                               "编集",
+                                                               "西山茂"
+                                                           ],
+                                                           [
+                                                               "音乐",
+                                                               "井内舞子"
+                                                           ]
+                                                       ],
+                                                       [
+                                                           [
+                                                               "系列构成",
+                                                               "ヤスカワショウゴ"
+                                                           ],
+                                                           [
+                                                               "美术监督",
+                                                               "丹伊田輝彦"
+                                                           ],
+                                                           [
+                                                               "摄影监督",
+                                                               "福世晋吾"
+                                                           ],
+                                                           [
+                                                               "音响监督",
+                                                               "明田川仁"
+                                                           ],
+                                                           [
+                                                               "动画制作",
+                                                               "J.C.STAFF"
+                                                           ]
+                                                       ]
+                                                   ]
+                        }
 }
