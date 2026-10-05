@@ -523,6 +523,7 @@ function clearWorkStaffFilter() {
     const normalView = document.getElementById("work-staff-normal-view");
     const filterView = document.getElementById("work-staff-filtered-view");
     if (normalView) normalView.hidden = false;
+    scheduleWorkStaffFoldRefresh();
     if (filterView) filterView.hidden = true;
     
     const dynamicHeading = document.getElementById("work-staff-dynamic-heading");
@@ -605,7 +606,127 @@ function applyWorkStaffFilter(w, targetSlug, targetLabel) {
     filterView.innerHTML = html;
 }
 
+// ========= 手机端长 STAFF 模块折叠 =========
+let workStaffFolds = [];
+let workStaffFoldObserver = null;
+let workStaffFoldFrame = 0;
+
+function refreshWorkStaffFolds(){
+  const mobile = window.matchMedia('(max-width:680px)').matches;
+  const limit = Math.round(Math.min(480, Math.max(280, window.innerHeight * .6)));
+  workStaffFolds.forEach(fold => {
+    if (!fold.content.getClientRects().length) return;
+    fold.root.style.setProperty('--staff-fold-limit', `${limit}px`);
+    const overflows = mobile && fold.viewport.scrollHeight > limit + 48;
+    const collapsed = overflows && !fold.expanded;
+    fold.root.classList.toggle('is-collapsed', collapsed);
+    fold.actions.hidden = !overflows;
+    fold.button.setAttribute('aria-expanded', String(!collapsed));
+    fold.text.textContent = collapsed ? `展开全部${fold.label}` : `收起${fold.label}`;
+
+    // Keep clipped names out of keyboard navigation and the accessibility tree.
+    const edge = collapsed ? fold.viewport.getBoundingClientRect().bottom - 24 : Infinity;
+    fold.items.forEach(item => {
+      const clipped = collapsed && item.getBoundingClientRect().top >= edge;
+      item.inert = clipped;
+      if (clipped) item.setAttribute('aria-hidden', 'true');
+      else item.removeAttribute('aria-hidden');
+    });
+  });
+}
+
+function scheduleWorkStaffFoldRefresh(){
+  if (workStaffFoldFrame) return;
+  workStaffFoldFrame = requestAnimationFrame(() => {
+    workStaffFoldFrame = 0;
+    refreshWorkStaffFolds();
+  });
+}
+
+function clearWorkStaffFolds(){
+  workStaffFoldObserver?.disconnect();
+  workStaffFoldObserver = null;
+  workStaffFolds = [];
+}
+
+function createWorkStaffFold(content, id, label, workSlug, mobileOnly = false){
+  if (!content) return;
+  const root = document.createElement('div');
+  root.className = 'staff-fold' + (mobileOnly ? ' staff-fold--mobile' : '');
+  if (id === 'staff-fold-main') root.classList.add('staff-fold--main');
+  const viewport = document.createElement('div');
+  viewport.className = 'staff-fold-viewport';
+  viewport.id = id;
+  const actions = document.createElement('div');
+  actions.className = 'staff-fold-actions';
+  actions.hidden = true;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'staff-fold-toggle';
+  button.setAttribute('aria-controls', id);
+  button.setAttribute('aria-expanded', 'true');
+  const text = document.createElement('span');
+  const chevron = document.createElement('span');
+  chevron.className = 'staff-fold-chevron';
+  chevron.setAttribute('aria-hidden', 'true');
+  button.append(text, chevron);
+  actions.appendChild(button);
+  content.before(root);
+  viewport.appendChild(content);
+  root.append(viewport, actions);
+
+  const stateKey = `staffFold:${workSlug}:${id}`;
+  let expanded = false;
+  try { expanded = sessionStorage.getItem(stateKey) === 'expanded'; } catch {}
+  const items = Array.from(content.querySelectorAll(
+    '.staff-mobile-entry, .mobile-overview-card, .mobile-overview-row, .ep-staff-item, .person-token, .mobile-overview-names > span, .ep-staff-names > span'
+  ));
+  const fold = {root, viewport, content, actions, button, text, label, expanded, items};
+  const remember = () => {
+    try { sessionStorage.setItem(stateKey, fold.expanded ? 'expanded' : 'collapsed'); } catch {}
+  };
+  button.addEventListener('click', () => {
+    const top = root.getBoundingClientRect().top + window.scrollY;
+    const scrollY = window.scrollY;
+    const headerHeight = document.querySelector('.site-header')?.getBoundingClientRect().height || 0;
+    const returnToModule = root.getBoundingClientRect().top < headerHeight;
+    fold.expanded = !fold.expanded;
+    remember();
+    refreshWorkStaffFolds();
+    // Collapsing a long list should return to that module, not skip to the footer.
+    window.scrollTo({top: !fold.expanded && returnToModule ? Math.max(0, top - headerHeight - 16) : scrollY, behavior: 'auto'});
+  });
+  viewport.addEventListener('focusin', event => {
+    if (!root.classList.contains('is-collapsed')) return;
+    if (event.target.getBoundingClientRect().bottom <= viewport.getBoundingClientRect().bottom - 24) return;
+    fold.expanded = true;
+    remember();
+    refreshWorkStaffFolds();
+  });
+  workStaffFolds.push(fold);
+}
+
+function setupWorkStaffFolds(workSlug){
+  clearWorkStaffFolds();
+  createWorkStaffFold(document.querySelector('#work-staff-block .staff-mobile-grid'), 'staff-fold-main', '主要 STAFF', workSlug, true);
+  createWorkStaffFold(document.querySelector('#work-detailed-staff-block .detailed-mobile-overview'), 'staff-fold-overview', '总览', workSlug, true);
+  document.querySelectorAll('#work-detailed-staff-block .ep-staff-list').forEach((content, index) => {
+    createWorkStaffFold(content, `staff-fold-episode-${index}`, '本集 STAFF', workSlug);
+  });
+  if (typeof ResizeObserver !== 'undefined') {
+    workStaffFoldObserver = new ResizeObserver(scheduleWorkStaffFoldRefresh);
+    workStaffFolds.forEach(fold => workStaffFoldObserver.observe(fold.content));
+  }
+  refreshWorkStaffFolds();
+  scheduleWorkStaffFoldRefresh();
+}
+
+window.addEventListener('resize', scheduleWorkStaffFoldRefresh, {passive: true});
+document.fonts?.ready.then(scheduleWorkStaffFoldRefresh);
+
+
 async function renderWorkDetail(slug){
+  clearWorkStaffFolds();
   let w = getWorkBySlug(slug);
   if(!w){ try{ w = await fetch(`data/works/${slug}.json`,{cache:"no-store"}).then(r=>r.json()); }catch{} }
   LAST_WORK_SLUG = slug;
@@ -793,6 +914,7 @@ async function renderWorkDetail(slug){
   };
 
   renderCol(col1Ul, col1Entries); renderCol(col2Ul, col2Entries);
+  staffBlock?.querySelector(".staff-fold--main")?.remove();
   staffBlock?.querySelector(".staff-mobile-grid")?.remove();
   if (staffBlock) {
     const mobileGrid = document.createElement("dl");
@@ -1082,6 +1204,7 @@ async function renderWorkDetail(slug){
           tabContents.forEach(c => c.style.display = 'none');
           targetBtn.classList.add('active');
           targetContent.style.display = 'block';
+          scheduleWorkStaffFoldRefresh();
 
           const option = episodeOptions.find(item => item.target === target);
           if (jumpInput && option) jumpInput.value = option.label;
@@ -1168,6 +1291,7 @@ async function renderWorkDetail(slug){
       detailedBlock.hidden = true;
   }
 
+  setupWorkStaffFolds(w.slug || slug);
   restoreWorkScroll(w.slug || slug);
 }
 

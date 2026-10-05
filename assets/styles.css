@@ -563,3 +563,19 @@ nav a:hover,nav a.active{background:rgba(106,17,203,.25)}
 @media (prefers-reduced-motion:reduce){
   .work-card,.search-box input{transition:none}
 }
+
+/* Limit long staff modules on phones; each episode keeps its own state. */
+.staff-fold{min-width:0}
+.staff-fold--mobile,.staff-fold-actions{display:none}
+.staff-fold-viewport{position:relative;display:flow-root;min-width:0;overflow-anchor:none}
+@media (max-width:680px){
+  .staff-fold--mobile{display:block}
+  .staff-fold.is-collapsed .staff-fold-viewport{max-height:var(--staff-fold-limit,480px);overflow:hidden}
+  .staff-fold.is-collapsed .staff-fold-viewport::after{content:"";position:absolute;inset:auto 0 0;height:36px;background:linear-gradient(transparent,var(--dark));pointer-events:none}
+  .staff-fold-actions{display:block;padding-top:10px}
+  .staff-fold-toggle{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:46px;padding:11px 16px;border:1px solid rgba(185,212,255,.16);border-radius:10px;background:rgba(185,212,255,.055);color:#b9d4ff;font:inherit;font-size:.9rem;line-height:1.5;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .staff-fold-toggle:hover{background:rgba(185,212,255,.09)}
+  .staff-fold-toggle:focus-visible{outline:2px solid #b9d4ff;outline-offset:3px}
+  .staff-fold-chevron{width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-2px) rotate(45deg)}
+  .staff-fold:not(.is-collapsed) .staff-fold-chevron{transform:translateY(2px) rotate(225deg)}
+}
