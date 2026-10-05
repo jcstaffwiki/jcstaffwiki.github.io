@@ -739,9 +739,13 @@ async function renderWorkDetail(slug){
 
   const [col1Entries, col2Entries] = collectMainStaffColumns(w);
 
-  const appendStaffEntryContent = (target, item) => {
+  const appendStaffEntryContent = (target, item, {showRole = true} = {}) => {
       const {role, tokens} = item;
-      const strong = document.createElement("b"); strong.textContent = role ? role + "：" : ""; target.appendChild(strong);
+      if (showRole) {
+        const strong = document.createElement("b");
+        strong.textContent = role ? role + "：" : "";
+        target.appendChild(strong);
+      }
       tokens.forEach(t=>{
         addPersonToWork(t.cleanLabel || t.label, t.slug);
 
@@ -791,31 +795,25 @@ async function renderWorkDetail(slug){
   renderCol(col1Ul, col1Entries); renderCol(col2Ul, col2Entries);
   staffBlock?.querySelector(".staff-mobile-grid")?.remove();
   if (staffBlock) {
-    const mobileGrid = document.createElement("div");
+    const mobileGrid = document.createElement("dl");
     mobileGrid.className = "staff-mobile-grid";
     const maxRows = Math.max(col1Entries.length, col2Entries.length);
     for (let i = 0; i < maxRows; i++) {
       const left = col1Entries[i];
       const right = col2Entries[i];
-      const row = document.createElement("div");
-      row.className = "staff-mobile-row";
-      if (left?.spacer && right?.spacer) {
-        row.classList.add("is-spacer");
-        mobileGrid.appendChild(row);
-        continue;
-      }
       [left, right].forEach(item => {
-        const cell = document.createElement("div");
-        cell.className = "staff-mobile-cell";
-        if (!item || item.spacer) {
-          cell.classList.add("is-empty");
-          cell.innerHTML = "&nbsp;";
-        } else {
-          appendStaffEntryContent(cell, item);
-        }
-        row.appendChild(cell);
+        if (!item || item.spacer) return;
+        const entry = document.createElement("div");
+        entry.className = "staff-mobile-entry";
+        const role = document.createElement("dt");
+        role.className = "staff-mobile-role";
+        role.textContent = item.role || "参与人员";
+        const names = document.createElement("dd");
+        names.className = "staff-mobile-names";
+        appendStaffEntryContent(names, item, {showRole: false});
+        entry.append(role, names);
+        mobileGrid.appendChild(entry);
       });
-      mobileGrid.appendChild(row);
     }
     staffBlock.appendChild(mobileGrid);
   }
