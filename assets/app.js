@@ -798,8 +798,8 @@ async function renderWorkDetail(slug){
   const linksIsNull = w.hasOwnProperty('links') && w.links === null;
   let list = [];
   if(isPlain){
-    order.forEach(k => { if(w.links[k]) list.push({ title: linkNames[k] || k, url: w.links[k] }); });
-    Object.keys(w.links).forEach(k => { if(!order.includes(k) && w.links[k]) list.push({ title: k, url: w.links[k] }); });
+    order.forEach(k => { if(w.links[k]) list.push({ key: k, title: linkNames[k] || k, url: w.links[k] }); });
+    Object.keys(w.links).forEach(k => { if(!order.includes(k) && w.links[k]) list.push({ key: k, title: k, url: w.links[k] }); });
   }
   const linksShouldShow = linksIsNull || list.length > 0;
 
@@ -813,13 +813,12 @@ async function renderWorkDetail(slug){
       const h1 = document.createElement("h3"); h1.textContent = "相关链接";
       const columnsWrap = document.createElement("div");
       columnsWrap.className = "links-list-columns";
-      const maxLinksPerCol = list.length > 8 ? Math.ceil(list.length / 2) : 4;
-      const chunks = linksIsNull ? [[]] : [];
-      if(!linksIsNull){
-        for(let i = 0; i < list.length; i += maxLinksPerCol){
-          chunks.push(list.slice(i, i + maxLinksPerCol));
-        }
-      }
+      // Keep longer reference labels together in the second column.
+      const firstColumnKeys = new Set(["official", "twitter", "bangumi", "moegirl", "seesaa"]);
+      const chunks = linksIsNull ? [[]] : [
+        list.filter(({key}) => firstColumnKeys.has(key)),
+        list.filter(({key}) => !firstColumnKeys.has(key))
+      ].filter(chunk => chunk.length > 0);
       chunks.forEach((chunk, index) => {
         const ul = document.createElement("ul");
         ul.className = "links-list";
