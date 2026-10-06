@@ -813,12 +813,26 @@ async function renderWorkDetail(slug){
       const h1 = document.createElement("h3"); h1.textContent = "相关链接";
       const columnsWrap = document.createElement("div");
       columnsWrap.className = "links-list-columns";
-      // Keep longer reference labels together in the second column.
-      const firstColumnKeys = new Set(["official", "twitter", "bangumi", "moegirl", "seesaa"]);
-      const chunks = linksIsNull ? [[]] : [
-        list.filter(({key}) => firstColumnKeys.has(key)),
-        list.filter(({key}) => !firstColumnKeys.has(key))
-      ].filter(chunk => chunk.length > 0);
+      const maxLinksPerCol = list.length > 8 ? Math.ceil(list.length / 2) : 4;
+      const chunks = linksIsNull ? [[]] : [];
+      if(!linksIsNull){
+        for(let i = 0; i < list.length; i += maxLinksPerCol){
+          chunks.push(list.slice(i, i + maxLinksPerCol));
+        }
+        // Keep the long reference labels together without raising the column limit.
+        const keyframeCol = chunks.findIndex(chunk => chunk.some(({key}) => key === "keyframe_staff_list"));
+        const sakugaCol = chunks.findIndex(chunk => chunk.some(({key}) => key === "sakugabooru"));
+        if(keyframeCol >= 0 && sakugaCol >= 0 && keyframeCol !== sakugaCol){
+          const source = chunks[keyframeCol];
+          const target = chunks[sakugaCol];
+          const [reference] = source.splice(source.findIndex(({key}) => key === "keyframe_staff_list"), 1);
+          if(target.length >= maxLinksPerCol){
+            const [other] = target.splice(target.findIndex(({key}) => key !== "sakugabooru"), 1);
+            source.push(other);
+          }
+          target.unshift(reference);
+        }
+      }
       chunks.forEach((chunk, index) => {
         const ul = document.createElement("ul");
         ul.className = "links-list";
