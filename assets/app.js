@@ -857,11 +857,15 @@ async function renderWorkDetail(slug){
   const cp = (w.copyright ?? "").toString().trim();
   if(cp){ copyrightEl.textContent = cp; copyrightEl.hidden = false; } else { copyrightEl.textContent = ""; copyrightEl.hidden = true; }
 
-  const seenSlugs = new Set();
+  const peopleBySlug = new Map();
   const addPersonToWork = (label, slug) => {
-      if(!seenSlugs.has(slug)) {
-          seenSlugs.add(slug);
-          CURRENT_WORK_PEOPLE.push({ label, slug });
+      const existing = peopleBySlug.get(slug);
+      if(existing) {
+          if(!existing.labels.includes(label)) existing.labels.push(label);
+      } else {
+          const person = { label, slug, labels: [label] };
+          peopleBySlug.set(slug, person);
+          CURRENT_WORK_PEOPLE.push(person);
       }
   };
 
@@ -1309,6 +1313,24 @@ async function renderWorkDetail(slug){
 }
 
 // ========= 交互：作品内人员检索功能 =========
+function isWorkPersonMatch(person, keyword, exact = false) {
+    const query = String(keyword || "").toLowerCase();
+    if (!query) return false;
+
+    const pData = GLOBAL_PEOPLE.find(p => p.slug === person.slug);
+    const names = [
+        person.label,
+        person.slug,
+        ...(Array.isArray(person.labels) ? person.labels : []),
+        pData?.name_jp,
+        ...(Array.isArray(pData?.aliases) ? pData.aliases : [])
+    ];
+    return names.some(name => {
+        const value = String(name || "").toLowerCase();
+        return exact ? value === query : value.includes(query);
+    });
+}
+
 function setupWorkStaffSearch() {
     const wsInput = document.getElementById("work-staff-search-input");
     const wsDropdown = document.getElementById("work-staff-search-dropdown");
@@ -1320,9 +1342,7 @@ function setupWorkStaffSearch() {
         if (!wsDropdown) return;
         if (!q) { wsDropdown.hidden = true; return; }
 
-        const matched = CURRENT_WORK_PEOPLE.filter(p => {
-            return p.label.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q);
-        }).slice(0, 8);
+        const matched = CURRENT_WORK_PEOPLE.filter(p => isWorkPersonMatch(p, q)).slice(0, 8);
 
         if (matched.length === 0) {
             wsDropdown.hidden = true; return;
@@ -1396,13 +1416,13 @@ function setupWorkStaffSearch() {
             const val = wsInput.value.trim().toLowerCase();
             if(!val) return clearWorkStaffFilter();
 
-            const exact = CURRENT_WORK_PEOPLE.find(p => p.label.toLowerCase() === val || p.slug.toLowerCase() === val);
+            const exact = CURRENT_WORK_PEOPLE.find(p => isWorkPersonMatch(p, val, true));
             if (exact) {
                 wsInput.value = exact.label;
                 if(wsClear) wsClear.hidden = false;
                 applyWorkStaffFilter(CURRENT_WORK, exact.slug, exact.label);
             } else {
-                const partial = CURRENT_WORK_PEOPLE.find(p => p.label.toLowerCase().includes(val) || p.slug.toLowerCase().includes(val));
+                const partial = CURRENT_WORK_PEOPLE.find(p => isWorkPersonMatch(p, val));
                 if (partial) {
                     wsInput.value = partial.label;
                     if(wsClear) wsClear.hidden = false;
