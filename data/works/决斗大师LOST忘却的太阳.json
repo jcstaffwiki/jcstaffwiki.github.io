@@ -16,5 +16,31 @@
     "sakugabooru": "https://www.sakugabooru.com/post?tags=duel_masters_lost%3A_boukyaku_no_taiyou"
   },
   "cn_streaming": null,
-  "copyright": "TM and ©2025 Wizards of the Coast/Shogakukan/WHC/ShoPro"
+  "copyright": "TM and ©2025 Wizards of the Coast/Shogakukan/WHC/ShoPro",
+  "production_info": {
+    "main_staff_columns": [
+      [
+        ["监督", "福島利規"],
+        ["角色设计・道具设计・总作画监督", "橋詰力"],
+        ["美术监督", "明石聖子"],
+        ["摄影监督", "茂木智孝"],
+        ["编集", "山岸歩奈実"],
+        ["音响监督", "高寺たけし"],
+        ["音响制作", "HALF H・P STUDIO"],
+        "空行",
+        ["动画制作统括", "松倉友二"]
+      ],
+      [
+        ["系列构成", "加藤陽一"],
+        ["音乐", "坂部剛"],
+        ["色彩设计", "石川恭介"],
+        ["CG导演", "田所洋行"],
+        ["2D设计Works", "吉垣誠"],
+        ["动画制作", ["J.C.STAFF", "SMDE"]],
+        ["音乐制作", "小学館ミュージック&デジタル エンタテイメント", {"小学館ミュージック&デジタル エンタテイメント": "SMDE"}],
+        "空行",
+        ["动画制片人", ["松倉友二", "鄭ジウン"]]
+      ]
+    ]
+  }
 }
