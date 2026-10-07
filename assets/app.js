@@ -204,7 +204,7 @@ function getPersonRolesInWork(work, keyword) {
     if (col.spacer) return;
     const hasMatch = col.tokens.some(t => isPersonMatch(t.slug, t.label, kw));
     if (hasMatch && col.role) {
-      roles.add(col.role);
+      getSearchRoleLabels(col).forEach(role => roles.add(role));
       matched = true;
     }
   });
@@ -218,7 +218,7 @@ function getPersonRolesInWork(work, keyword) {
           return isPersonMatch(slug, rawName, kw);
         });
         if (hasMatch && roleObj.role) {
-          roles.add(roleObj.role);
+          getSearchRoleLabels(roleObj).forEach(role => roles.add(role));
           matched = true;
         }
       });
@@ -300,16 +300,10 @@ function renderWorks(list, rawQ1, rawQ2){
 
       const buildTagRow = (roles, colorClass) => {
           if (!roles || roles.length === 0) return "";
-          const splitRoles = new Set();
-          roles.forEach(r => {
-            r.split(/[・·\/]/).forEach(subRole => {
-              const cleanSubRole = subRole.trim();
-              if (cleanSubRole) splitRoles.add(cleanSubRole);
-            });
-          });
+          const searchRoles = new Set(roles);
           
           return `<div class="work-tags-row">` + 
-                 Array.from(splitRoles).map(r => `<span class="work-tag tag-role ${colorClass}">${escapeHTML(r)}</span>`).join('') + 
+                 Array.from(searchRoles).map(r => `<span class="work-tag tag-role ${colorClass}">${escapeHTML(r)}</span>`).join('') + 
                  `</div>`;
       };
 
@@ -414,18 +408,25 @@ function normalizeStaffEntry(entry){
   if(Array.isArray(entry)){
     if(entry.length === 0 || isSpacerMarker(entry[0])) return makeStaffEntry({ spacer: true });
 
-    const [role, names, opt1, opt2] = entry;
+    const [role, names, ...options] = entry;
     const normalized = makeStaffEntry({
       role: String(role || ""),
+      split_role: true,
       names: Array.isArray(names) ? names : (names === undefined || names === null ? [] : [names])
     });
 
-    [opt1, opt2].forEach(opt => {
+    options.forEach(opt => {
       if(opt === undefined || opt === null) return;
       if(Array.isArray(opt)){
         normalized.slugList = opt;
       }else if(isPlainObject(opt)){
-        normalized.slugMap = opt;
+        if(typeof opt.split_role === "boolean"){
+          normalized.split_role = opt.split_role;
+          const { split_role, ...slugMap } = opt;
+          if(Object.keys(slugMap).length) normalized.slugMap = slugMap;
+        }else{
+          normalized.slugMap = opt;
+        }
       }else if(!normalized.map_to){
         normalized.map_to = String(opt);
       }
@@ -443,6 +444,13 @@ function getStaffNames(entry){
 }
 function getEpisodeStaff(ep){
   return Array.isArray(ep?.staff) ? ep.staff.map(normalizeStaffEntry) : [];
+}
+// 搜索结果的职称标签；常规staff和按集显示始终使用完整role。
+function getSearchRoleLabels(entry){
+  const role = String(entry?.role || "").trim();
+  if(!role) return [];
+  if(entry.split_role === false) return [role];
+  return role.split(/[・·\/]/).map(part => part.trim()).filter(Boolean);
 }
 function resolveStaffSlug(rawLabel, index, entry){
   const cName = cleanName(rawLabel);
@@ -486,7 +494,7 @@ function collectMainStaffColumns(work){
         return { label: rawLabel, cleanLabel: cName, slug: slug };
       });
 
-      if (role || tokens.length){ result[idx].push({ role, tokens }); }
+      if (role || tokens.length){ result[idx].push({ role, tokens, split_role: entry.split_role }); }
     });
   });
   return result;
@@ -550,19 +558,19 @@ function applyWorkStaffFilter(w, targetSlug, targetLabel) {
                   </h4>`;
 
     const [m1, m2] = collectMainStaffColumns(w);
-    const mainRoles = [];
+    const mainRoles = new Set();
     [...m1, ...m2].forEach(item => {
         if(item.spacer) return;
         if(item.tokens && item.tokens.some(t => t.slug === targetSlug)) {
-            if (item.role) mainRoles.push(item.role);
+            getSearchRoleLabels(item).forEach(role => mainRoles.add(role));
         }
     });
 
-    if (mainRoles.length > 0) {
+    if (mainRoles.size > 0) {
         html += `<div style="margin-bottom: 24px;">
                    <div style="font-size: 0.9rem; color: #a7a7a7; margin-bottom: 10px; font-weight: 700;">主要职务</div>
                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                     ${mainRoles.map(r => `<span class="work-tag tag-role" style="background: linear-gradient(90deg, #6a11cb, #2575fc); font-size: 0.85rem; padding: 6px 12px;">${escapeHTML(r)}</span>`).join('')}
+                     ${Array.from(mainRoles).map(r => `<span class="work-tag tag-role" style="background: linear-gradient(90deg, #6a11cb, #2575fc); font-size: 0.85rem; padding: 6px 12px;">${escapeHTML(r)}</span>`).join('')}
                    </div>
                  </div>`;
     }
@@ -598,7 +606,7 @@ function applyWorkStaffFilter(w, targetSlug, targetLabel) {
                  </div>`;
     }
 
-    if (mainRoles.length === 0 && epRoles.length === 0) {
+    if (mainRoles.size === 0 && epRoles.length === 0) {
         html += `<div style="color: #a7a7a7; padding: 20px 0; text-align: center;">该人员在本作中没有明确的职务记录。</div>`;
     }
 
