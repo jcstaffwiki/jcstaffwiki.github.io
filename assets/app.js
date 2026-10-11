@@ -1235,7 +1235,8 @@ async function renderWorkDetail(slug){
                   }else if(roleObj.section){
                       html += `<div class="staff-section">${escapeHTML(roleObj.section)}</div>`;
                   }else if(roleObj.role && getStaffNames(roleObj).length){
-                      html += `<div class="ep-staff-item"><div class="ep-staff-role">${escapeHTML(roleObj.role)}</div><div class="ep-staff-names">${renderStaffNamesHTML(roleObj, w.slug || LAST_WORK_SLUG || "", noteContexts[i])}</div></div>`;
+                      const roleClass = Array.from(roleObj.role).length > 6 ? " ep-staff-item--long-role" : "";
+                      html += `<div class="ep-staff-item${roleClass}"><div class="ep-staff-role">${escapeHTML(roleObj.role)}</div><div class="ep-staff-names">${renderStaffNamesHTML(roleObj, w.slug || LAST_WORK_SLUG || "", noteContexts[i])}</div></div>`;
                   }
               });
           }
