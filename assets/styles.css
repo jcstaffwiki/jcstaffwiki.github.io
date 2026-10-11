@@ -234,6 +234,18 @@ nav a:hover,nav a.active{background:rgba(106,17,203,.25)}
 .staff-col .person-link:hover{ text-decoration:underline; }
 .staff-name-run > .person-token:not(:last-child)::after{ content:"、"; margin:0 .15em; }
 .person-token{display:inline-block;vertical-align:top;max-width:100%;}
+.person-name-no-link{color:#000;background:#edf2f7;border-radius:3px;padding:.05em .25em;}
+.staff-note-mark{font-size:.72em;line-height:0;vertical-align:super;}
+.staff-note-ref{color:#b9d4ff;background:none;border:0;border-radius:3px;font:inherit;line-height:1.4;min-width:1.6em;min-height:1.6em;padding:.1em;cursor:pointer;}
+.staff-note-ref:hover{text-decoration:underline;}
+.staff-note-ref:focus-visible{outline:2px solid #b9d4ff;outline-offset:2px;}
+.ep-staff-notes{margin:1.25rem 0 .5rem;padding:1rem 0 0;border-top:1px solid rgba(255,255,255,.12);color:#a9b4c8;font-size:.8rem;line-height:1.8;}
+.ep-staff-note{display:flex;gap:.5em;margin:.3em 0;scroll-margin-top:110px;}
+.staff-note-number{flex:0 0 auto;min-width:1.5em;}
+.ep-staff-note>span:last-child{min-width:0;overflow-wrap:anywhere;}
+.ep-staff-notes .person-link{color:#b9d4ff;text-decoration:none;}
+.ep-staff-notes .person-link:hover{text-decoration:underline;}
+.ep-staff-note:focus{outline:1px dotted #b9d4ff;outline-offset:4px;}
 .staff-name-run{display:inline;}
 .staff-name-group{display:block;margin:.2em 0 .55em;min-width:0;}
 .staff-group-title{font-weight:600;line-height:1.8;}

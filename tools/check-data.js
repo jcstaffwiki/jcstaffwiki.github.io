@@ -5,8 +5,27 @@ const path = require('node:path');
 const isObject = value => value && typeof value === 'object' && !Array.isArray(value);
 const isSpacer = value => typeof value === 'string' && ['', '-', '--', '---', 'spacer', '空行'].includes(value.trim().toLowerCase());
 
-function validateStaff(entries, location, errors){
+function validateStaff(entries, location, errors, allowNotes = true){
   if(!Array.isArray(entries)){ errors.push(`${location} 必须是数组`); return; }
+  function person(value, at, keys){
+    if(typeof value.name !== 'string' || !value.name.trim() || isSpacer(value.name)) errors.push(`${at}.name 必须是非空的原表记姓名`);
+    if(Object.keys(value).some(key => !keys.includes(key))) errors.push(`${at} 姓名对象只支持${keys.join('、')}`);
+    if(value.link !== undefined && typeof value.link !== 'boolean') errors.push(`${at}.link 必须是true或false`);
+    if(value.slug !== undefined && (typeof value.slug !== 'string' || !value.slug.trim())) errors.push(`${at}.slug 必须是非空的人物文件名`);
+  }
+  function note(value, at){
+    if(typeof value === 'string'){
+      if(!value.trim()) errors.push(`${at} 备注文字不能为空`);
+      return;
+    }
+    if(!Array.isArray(value) || !value.length){ errors.push(`${at} 必须是文字或由文字、姓名对象组成的非空数组`); return; }
+    if(!value.some(part => typeof part === 'string' ? part.trim() : isObject(part) && typeof part.name === 'string' && part.name.trim())) errors.push(`${at} 备注内容不能为空`);
+    value.forEach((part, i) => {
+      if(typeof part === 'string') return;
+      if(isObject(part)) person(part, `${at}[${i}]`, ['name', 'slug', 'link']);
+      else errors.push(`${at}[${i}] 必须是备注文字或姓名对象`);
+    });
+  }
   function names(value, at, depth = 0, insideList = false){
     if(depth > 8){ errors.push(`${at} 所属层级超过8层，请检查循环或误写`); return 0; }
     if(typeof value === 'string') return isSpacer(value) ? 0 : 1;
@@ -15,6 +34,14 @@ function validateStaff(entries, location, errors){
       return value.reduce((count, item, i) => count + names(item, `${at}[${i}]`, depth, true), 0);
     }
     if(isObject(value)){
+      if(Object.hasOwn(value, 'name')){
+        person(value, at, ['name', 'slug', 'link', 'note']);
+        if(Object.hasOwn(value, 'note')){
+          if(!allowNotes) errors.push(`${at}.note 只用于分集staff，主要staff请不写单集备注`);
+          note(value.note, `${at}.note`);
+        }
+        return 1;
+      }
       if(typeof value.studio !== 'string' || !value.studio.trim() || isSpacer(value.studio)){
         errors.push(`${at}.studio 必须是非空的机构原表记`);
       }
@@ -26,7 +53,7 @@ function validateStaff(entries, location, errors){
       if(!count) errors.push(`${at}.members 没有人员，独立机构请直接写名称字符串`);
       return count + 1;
     }
-    errors.push(`${at} 必须是名称、空行或机构成员对象`);
+    errors.push(`${at} 必须是名称、姓名对象、空行或机构成员对象`);
     return 0;
   }
   entries.forEach((entry, i) => {
@@ -65,7 +92,7 @@ function validateWorkStaff(work, label, errors){
   const columns = work.production_info?.main_staff_columns;
   if(columns !== undefined){
     if(!Array.isArray(columns) || columns.length !== 2) errors.push(`${label}.main_staff_columns 必须有左右两列`);
-    else columns.forEach((column, i) => validateStaff(column, `${label}.main_staff_columns[${i}]`, errors));
+    else columns.forEach((column, i) => validateStaff(column, `${label}.main_staff_columns[${i}]`, errors, false));
   }
   const detailed = work.detailed_staff;
   if(detailed !== undefined){

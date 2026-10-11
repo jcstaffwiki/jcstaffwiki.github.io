@@ -71,7 +71,7 @@ function buildPeopleIndex(works) {
     const [m1, m2] = collectMainStaffColumns(w);
     [...m1, ...m2].forEach(col => {
       if(!col.spacer && col.tokens) {
-        col.tokens.forEach(t => map.set(t.slug, t.cleanLabel || t.label));
+        col.tokens.forEach(t => { if(t.slug) map.set(t.slug, t.cleanLabel || t.label); });
       }
     });
     
@@ -82,7 +82,7 @@ function buildPeopleIndex(works) {
           names.forEach((rawName, index) => {
             const cName = cleanName(rawName);
             const slug = resolveStaffSlug(rawName, index, roleObj);
-            map.set(slug, cName);
+            if(slug) map.set(slug, cName);
           });
         });
       });
@@ -400,19 +400,27 @@ function makeStaffEntry(data){
   return Object.assign({ _normalizedStaffEntry: true }, data);
 }
 // 名称树负责保留原表记布局；扁平名称只用于链接映射与人员搜索。
-function normalizeStaffNames(names, flatNames = []){
+function normalizeStaffNames(names, flatNames = [], nameMeta = []){
   const list = Array.isArray(names) ? names : (names == null ? [] : [names]);
   return list.flatMap(value => {
     if(typeof value === "string"){
       if(isSpacerMarker(value)) return [{ kind: "spacer" }];
       const label = value.trim();
       const index = flatNames.push(label) - 1;
+      nameMeta.push({});
+      return [{ kind: "person", label, index }];
+    }
+    if(isPlainObject(value) && typeof value.name === "string" && value.name.trim()){
+      const label = value.name.trim();
+      const index = flatNames.push(label) - 1;
+      nameMeta.push({ link: value.link !== false, slug: value.slug, note: value.note });
       return [{ kind: "person", label, index }];
     }
     if(isPlainObject(value) && typeof value.studio === "string" && value.studio.trim() && Array.isArray(value.members)){
       const label = value.studio.trim();
       const index = flatNames.push(label) - 1;
-      const members = normalizeStaffNames(value.members, flatNames);
+      nameMeta.push({});
+      const members = normalizeStaffNames(value.members, flatNames, nameMeta);
       return [{ kind: "studio", label, index, members }];
     }
     return [];
@@ -433,12 +441,14 @@ function normalizeStaffEntry(entry){
 
     const [role, names, ...options] = entry;
     const flatNames = [];
-    const nameNodes = normalizeStaffNames(names, flatNames);
+    const nameMeta = [];
+    const nameNodes = normalizeStaffNames(names, flatNames, nameMeta);
     const normalized = makeStaffEntry({
       role: String(role || ""),
       split_role: true,
       names: flatNames,
-      nameNodes
+      nameNodes,
+      nameMeta
     });
 
     options.forEach(opt => {
@@ -482,25 +492,80 @@ function resolveStaffSlug(rawLabel, index, entry){
   const item = normalizeStaffEntry(entry);
   const localMap = isPlainObject(item.slugMap) ? item.slugMap : null;
   const localList = Array.isArray(item.slugList) ? item.slugList : null;
+  const meta = item.nameMeta?.[index] || {};
+  if(meta.link === false) return "";
 
-  return (localList && localList[index]) ? String(localList[index])
+  return meta.slug ? String(meta.slug)
+       : (localList && localList[index]) ? String(localList[index])
        : (localMap && localMap[rawLabel]) ? String(localMap[rawLabel])
        : (localMap && localMap[cName]) ? String(localMap[cName])
        : cName;
 }
 function getStaffDisplayTokens(entry){
-  return getStaffNames(entry).map((label, index) => ({
-    label, cleanLabel: cleanName(label), slug: resolveStaffSlug(label, index, entry)
+  const item = normalizeStaffEntry(entry);
+  return getStaffNames(item).map((label, index) => ({
+    label, cleanLabel: cleanName(label), slug: resolveStaffSlug(label, index, item),
+    link: item.nameMeta?.[index]?.link !== false, note: item.nameMeta?.[index]?.note
   }));
 }
-function renderStaffNameNodes(nodes, tokens, workSlug){
+function staffNoteKey(token){
+  return JSON.stringify([token.label, token.slug, token.note]);
+}
+function staffNoteNumber(number){
+  return number <= 20 ? String.fromCodePoint(0x245f + number) : `[${number}]`;
+}
+function hasStaffNote(note){
+  return typeof note === "string" ? !!note.trim() : Array.isArray(note) && note.some(part =>
+    typeof part === "string" ? !!part.trim() : isPlainObject(part) && typeof part.name === "string" && !!part.name.trim()
+  );
+}
+// 每集依完整staff的首次出现顺序编号；总览和分集共用同一组编号。
+function buildEpisodeNoteContext(ep, episodeIndex){
+  const context = { episodeTarget: `ep-tab-${episodeIndex}`, label: ep.label || `第${episodeIndex+1}项`, notes: [], byKey: new Map() };
+  getEpisodeStaff(ep).forEach(entry => {
+    getStaffDisplayTokens(entry).forEach(token => {
+      if(!hasStaffNote(token.note)) return;
+      const key = staffNoteKey(token);
+      if(context.byKey.has(key)) return;
+      const number = context.notes.length + 1;
+      const note = { number, id: `staff-note-${episodeIndex}-${number}`, content: token.note };
+      context.byKey.set(key, note);
+      context.notes.push(note);
+    });
+  });
+  return context;
+}
+function renderPersonToken(token, workSlug){
+  const cleanText = token.cleanLabel || token.label;
+  const remark = token.label.replace(cleanText, "").trim();
+  const onClick = `saveWorkScroll(${JSON.stringify(workSlug || "")});setTempPersonLabel(${JSON.stringify(token.slug)},${JSON.stringify(cleanText)})`;
+  const name = token.link !== false && token.slug
+    ? `<a href="#/person/${encodeURIComponent(token.slug)}" class="person-link" onclick="${escapeHTML(onClick)}">${escapeHTML(cleanText)}</a>`
+    : `<span class="person-name-no-link">${escapeHTML(cleanText)}</span>`;
+  return name + (remark ? `<span>${escapeHTML(remark)}</span>` : "");
+}
+function renderStaffNoteContent(content, workSlug){
+  const parts = Array.isArray(content) ? content : [content];
+  return parts.map(part => {
+    if(typeof part === "string") return escapeHTML(part);
+    if(!isPlainObject(part) || typeof part.name !== "string" || !part.name.trim()) return "";
+    const label = part.name.trim();
+    return renderPersonToken({ label, cleanLabel: cleanName(label), slug: part.slug || cleanName(label), link: part.link !== false }, workSlug);
+  }).join("");
+}
+function renderEpisodeNotes(context, workSlug){
+  if(!context.notes.length) return "";
+  return `<div class="ep-staff-notes" aria-label="${escapeHTML(context.label)}表记备注">` + context.notes.map(note =>
+    `<div class="ep-staff-note" id="${note.id}" tabindex="-1"><span class="staff-note-number">${staffNoteNumber(note.number)}</span><span>${renderStaffNoteContent(note.content, workSlug)}</span></div>`
+  ).join("") + `</div>`;
+}
+function renderStaffNameNodes(nodes, tokens, workSlug, noteContext){
   const tokenHTML = node => {
     const token = tokens[node.index];
     if(!token) return "";
-    const cleanText = token.cleanLabel || token.label;
-    const remark = token.label.replace(cleanText, "").trim();
-    const onClick = `saveWorkScroll(${JSON.stringify(workSlug || "")});setTempPersonLabel(${JSON.stringify(token.slug)},${JSON.stringify(cleanText)})`;
-    return `<span class="person-token"><a href="#/person/${encodeURIComponent(token.slug)}" class="person-link" onclick="${escapeHTML(onClick)}">${escapeHTML(cleanText)}</a>${remark ? `<span>${escapeHTML(remark)}</span>` : ""}</span>`;
+    const note = noteContext?.byKey.get(staffNoteKey(token));
+    const mark = note ? `<sup class="staff-note-mark"><button type="button" class="staff-note-ref" data-note-target="${note.id}" data-episode-target="${noteContext.episodeTarget}" aria-label="查看${escapeHTML(noteContext.label)}备注${note.number}">${staffNoteNumber(note.number)}</button></sup>` : "";
+    return `<span class="person-token">${renderPersonToken(token, workSlug)}${mark}</span>`;
   };
   const render = list => {
     let html = "", run = [];
@@ -524,9 +589,9 @@ function renderStaffNameNodes(nodes, tokens, workSlug){
   };
   return render(nodes || []);
 }
-function renderStaffNamesHTML(entry, workSlug){
+function renderStaffNamesHTML(entry, workSlug, noteContext){
   const item = normalizeStaffEntry(entry);
-  return renderStaffNameNodes(item.nameNodes, getStaffDisplayTokens(item), workSlug);
+  return renderStaffNameNodes(item.nameNodes, getStaffDisplayTokens(item), workSlug, noteContext);
 }
 function getOriginalTitle(w){
   return (
@@ -557,11 +622,7 @@ function collectMainStaffColumns(work){
 
       const role = String(entry?.role || "");
       const names = getStaffNames(entry);
-      const tokens = names.map((rawLabel, i) => {
-        const cName = cleanName(rawLabel);
-        const slug = resolveStaffSlug(rawLabel, i, entry);
-        return { label: rawLabel, cleanLabel: cName, slug: slug };
-      });
+      const tokens = getStaffDisplayTokens(entry);
 
       if (role || tokens.length){ result[idx].push({ role, tokens, split_role: entry.split_role, entry }); }
     });
@@ -756,7 +817,7 @@ function createWorkStaffFold(content, id, label, workSlug, mobileOnly = false){
   let expanded = false;
   try { expanded = sessionStorage.getItem(stateKey) === 'expanded'; } catch {}
   const items = Array.from(content.querySelectorAll(
-    '.staff-mobile-entry, .mobile-overview-card, .mobile-overview-row, .ep-staff-item, .person-token, .mobile-overview-names > span, .ep-staff-names > span'
+    '.staff-mobile-entry, .mobile-overview-card, .mobile-overview-row, .ep-staff-item, .ep-staff-note, .person-token, .mobile-overview-names > span, .ep-staff-names > span'
   ));
   const fold = {root, viewport, content, actions, button, text, label, expanded, items};
   const remember = () => {
@@ -936,6 +997,7 @@ async function renderWorkDetail(slug){
 
   const peopleBySlug = new Map();
   const addPersonToWork = (label, slug) => {
+      if(!slug) return;
       const existing = peopleBySlug.get(slug);
       if(existing) {
           if(!existing.labels.includes(label)) existing.labels.push(label);
@@ -1063,9 +1125,11 @@ async function renderWorkDetail(slug){
 
       const tableHeaders = ds.overview_headers || [];
       const cellMatrix = [];
+      const noteContexts = ds.episodes.map(buildEpisodeNoteContext);
       
-      ds.episodes.forEach(ep => {
+      ds.episodes.forEach((ep, episodeIndex) => {
           const rowData = [];
+          const noteContext = noteContexts[episodeIndex];
           tableHeaders.forEach(th => {
               const matchingRoles = getEpisodeStaff(ep).filter(s => {
                   if (!s.role) return false;
@@ -1084,16 +1148,16 @@ async function renderWorkDetail(slug){
               let cellHTML = "-";
               const hasLayout = matchingRoles.some(roleObj => roleObj.nameNodes.some(node => node.kind !== "person"));
               if(hasLayout){
-                  cellHTML = matchingRoles.map(roleObj => renderStaffNamesHTML(roleObj, w.slug || LAST_WORK_SLUG || "")).filter(Boolean).join('<div class="staff-credit-separator"></div>') || "-";
+                  cellHTML = matchingRoles.map(roleObj => renderStaffNamesHTML(roleObj, w.slug || LAST_WORK_SLUG || "", noteContext)).filter(Boolean).join('<div class="staff-credit-separator"></div>') || "-";
               }else if(matchingRoles.length){
                   const allPeople = [], seenPeople = new Set();
                   matchingRoles.forEach(roleObj => {
                       getStaffDisplayTokens(roleObj).forEach(token => {
-                          const key = `${token.slug}::${token.label}`;
+                          const key = staffNoteKey(token);
                           if(!seenPeople.has(key)){ seenPeople.add(key); allPeople.push(token); }
                       });
                   });
-                  cellHTML = renderStaffNameNodes(allPeople.map((token, index) => ({kind:"person",index})), allPeople, w.slug || LAST_WORK_SLUG || "") || "-";
+                  cellHTML = renderStaffNameNodes(allPeople.map((token, index) => ({kind:"person",index})), allPeople, w.slug || LAST_WORK_SLUG || "", noteContext) || "-";
               }
               rowData.push(cellHTML);
           });
@@ -1171,10 +1235,11 @@ async function renderWorkDetail(slug){
                   }else if(roleObj.section){
                       html += `<div class="staff-section">${escapeHTML(roleObj.section)}</div>`;
                   }else if(roleObj.role && getStaffNames(roleObj).length){
-                      html += `<div class="ep-staff-item"><div class="ep-staff-role">${escapeHTML(roleObj.role)}</div><div class="ep-staff-names">${renderStaffNamesHTML(roleObj, w.slug || LAST_WORK_SLUG || "")}</div></div>`;
+                      html += `<div class="ep-staff-item"><div class="ep-staff-role">${escapeHTML(roleObj.role)}</div><div class="ep-staff-names">${renderStaffNamesHTML(roleObj, w.slug || LAST_WORK_SLUG || "", noteContexts[i])}</div></div>`;
                   }
               });
           }
+          html += renderEpisodeNotes(noteContexts[i], w.slug || LAST_WORK_SLUG || "");
           html += `</div></div>`;
       });
 
@@ -1257,6 +1322,25 @@ async function renderWorkDetail(slug){
 
       tabBtns.forEach(btn => {
           btn.addEventListener('click', () => activateTab(btn.dataset.target));
+      });
+
+      detailedBlock.querySelectorAll('.staff-note-ref').forEach(button => {
+          button.addEventListener('click', () => {
+              activateTab(button.dataset.episodeTarget);
+              const note = document.getElementById(button.dataset.noteTarget);
+              if(!note) return;
+              workStaffFolds.forEach(fold => {
+                  if(!fold.content.contains(note)) return;
+                  fold.expanded = true;
+                  try { sessionStorage.setItem(`staffFold:${w.slug || LAST_WORK_SLUG}:${fold.viewport.id}`, 'expanded'); } catch {}
+              });
+              refreshWorkStaffFolds();
+              requestAnimationFrame(() => {
+                  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                  note.scrollIntoView({behavior: reducedMotion ? 'auto' : 'smooth', block: 'start'});
+                  note.focus({preventScroll: true});
+              });
+          });
       });
 
       if (jumpInput && jumpToggle && jumpMenu) {
