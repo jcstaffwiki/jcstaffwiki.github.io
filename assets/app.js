@@ -556,7 +556,7 @@ function renderStaffNoteContent(content, workSlug){
 function renderEpisodeNotes(context, workSlug){
   if(!context.notes.length) return "";
   return `<div class="ep-staff-notes" aria-label="${escapeHTML(context.label)}表记备注">` + context.notes.map(note =>
-    `<div class="ep-staff-note" id="${note.id}" tabindex="-1"><span class="staff-note-number">${staffNoteNumber(note.number)}</span><span>${renderStaffNoteContent(note.content, workSlug)}</span></div>`
+    `<div class="ep-staff-note" id="${note.id}" tabindex="-1"><button type="button" class="staff-note-number" data-note-return="${note.id}" aria-label="从${escapeHTML(context.label)}备注${note.number}返回原位置" title="返回刚才的浏览位置">${staffNoteNumber(note.number)}</button><span>${renderStaffNoteContent(note.content, workSlug)}</span></div>`
   ).join("") + `</div>`;
 }
 function renderStaffNameNodes(nodes, tokens, workSlug, noteContext){
@@ -1015,6 +1015,8 @@ async function renderWorkDetail(slug){
   if(col2Ul) col2Ul.innerHTML = "";
 
   const [col1Entries, col2Entries] = collectMainStaffColumns(w);
+  const mainRows = Math.max(1, col1Entries.length, col2Entries.length);
+  document.getElementById("work-staff-2col")?.style.setProperty("--staff-main-rows", String(mainRows));
 
   const appendStaffEntryContent = (target, item, {showRole = true} = {}) => {
       const {role, tokens} = item;
@@ -1255,6 +1257,18 @@ async function renderWorkDetail(slug){
       const jumpMenu = detailedBlock.querySelector('.episode-jump-menu');
       let jumpMenuScrollTop = 0;
       let activeJumpTarget = "ep-tab-overview";
+      let noteNavigationFrame = 0;
+      const noteReturnStorageKey = `staffNoteOrigins:${w.slug || LAST_WORK_SLUG || ""}`;
+      let noteOrigins = new Map();
+      try {
+          const saved = JSON.parse(sessionStorage.getItem(noteReturnStorageKey) || "[]");
+          if (Array.isArray(saved)) {
+              noteOrigins = new Map(saved.filter(entry => Array.isArray(entry) && entry.length === 2 &&
+                  typeof entry[0] === "string" && isPlainObject(entry[1]) &&
+                  typeof entry[1].target === "string" && Number.isFinite(entry[1].x) &&
+                  Number.isFinite(entry[1].y) && Array.isArray(entry[1].folds)));
+          }
+      } catch {}
 
       const hideJumpMenu = () => {
           if (!jumpMenu) return;
@@ -1308,6 +1322,10 @@ async function renderWorkDetail(slug){
           const targetBtn = Array.from(tabBtns).find(btn => btn.dataset.target === target);
           const targetContent = document.getElementById(target);
           if (!targetBtn || !targetContent) return;
+          if (noteNavigationFrame) {
+              cancelAnimationFrame(noteNavigationFrame);
+              noteNavigationFrame = 0;
+          }
 
           activeJumpTarget = target;
           tabBtns.forEach(b => b.classList.remove('active'));
@@ -1325,21 +1343,68 @@ async function renderWorkDetail(slug){
           btn.addEventListener('click', () => activateTab(btn.dataset.target));
       });
 
-      detailedBlock.querySelectorAll('.staff-note-ref').forEach(button => {
+      const noteRefs = Array.from(detailedBlock.querySelectorAll('.staff-note-ref'));
+      noteRefs.forEach((button, index) => {
+          button.dataset.noteSource = String(index);
           button.addEventListener('click', () => {
-              activateTab(button.dataset.episodeTarget);
               const note = document.getElementById(button.dataset.noteTarget);
               if(!note) return;
+              noteOrigins.set(note.id, {
+                  target: activeJumpTarget,
+                  x: window.scrollX,
+                  y: window.scrollY,
+                  source: button.dataset.noteSource,
+                  folds: workStaffFolds.map(fold => ({id: fold.viewport.id, expanded: fold.expanded}))
+              });
+              try { sessionStorage.setItem(noteReturnStorageKey, JSON.stringify(Array.from(noteOrigins))); } catch {}
+              activateTab(button.dataset.episodeTarget);
               workStaffFolds.forEach(fold => {
                   if(!fold.content.contains(note)) return;
                   fold.expanded = true;
                   try { sessionStorage.setItem(`staffFold:${w.slug || LAST_WORK_SLUG}:${fold.viewport.id}`, 'expanded'); } catch {}
               });
               refreshWorkStaffFolds();
-              requestAnimationFrame(() => {
+              noteNavigationFrame = requestAnimationFrame(() => {
+                  noteNavigationFrame = 0;
+                  if (!note.isConnected) return;
                   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
                   note.scrollIntoView({behavior: reducedMotion ? 'auto' : 'smooth', block: 'start'});
                   note.focus({preventScroll: true});
+              });
+          });
+      });
+
+      detailedBlock.querySelectorAll('.staff-note-number[data-note-return]').forEach(button => {
+          button.addEventListener('click', () => {
+              const noteId = button.dataset.noteReturn;
+              const saved = noteOrigins.get(noteId);
+              const origin = saved && episodeOptions.some(option => option.target === saved.target) ? saved : null;
+              const episodeTarget = button.closest('.ep-tab-content')?.id;
+              const source = noteRefs.find(ref => ref.dataset.noteTarget === noteId &&
+                  origin && ref.dataset.noteSource === origin.source) ||
+                  noteRefs.find(ref => ref.dataset.noteTarget === noteId &&
+                      ref.closest('.ep-tab-content')?.id === (origin?.target || episodeTarget));
+              if (!origin && !source) return;
+
+              activateTab(origin?.target || episodeTarget);
+              workStaffFolds.forEach(fold => {
+                  const state = origin?.folds.find(item => item?.id === fold.viewport.id && typeof item.expanded === 'boolean');
+                  if (state) fold.expanded = state.expanded;
+                  else if (!origin && source && fold.content.contains(source)) fold.expanded = true;
+                  else return;
+                  try { sessionStorage.setItem(`staffFold:${w.slug || LAST_WORK_SLUG}:${fold.viewport.id}`, fold.expanded ? 'expanded' : 'collapsed'); } catch {}
+              });
+              refreshWorkStaffFolds();
+              noteNavigationFrame = requestAnimationFrame(() => {
+                  noteNavigationFrame = 0;
+                  if (!button.isConnected) return;
+                  if (origin) {
+                      if (source?.getClientRects().length) source.focus({preventScroll: true});
+                      window.scrollTo({left: origin.x, top: origin.y, behavior: 'instant'});
+                  } else {
+                      source.scrollIntoView({behavior: 'instant', block: 'center'});
+                      source.focus({preventScroll: true});
+                  }
               });
           });
       });
