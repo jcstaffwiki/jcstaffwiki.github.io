@@ -201,7 +201,7 @@ function getPersonRolesInWork(work, keyword) {
 
   const [m1, m2] = collectMainStaffColumns(work);
   [...m1, ...m2].forEach(col => {
-    if (col.spacer) return;
+    if (col.spacer || col.section) return;
     const hasMatch = col.tokens.some(t => isPersonMatch(t.slug, t.label, kw));
     if (hasMatch && col.role) {
       getSearchRoleLabels(col).forEach(role => roles.add(role));
@@ -399,20 +399,46 @@ function isSpacerMarker(value){
 function makeStaffEntry(data){
   return Object.assign({ _normalizedStaffEntry: true }, data);
 }
+// 名称树负责保留原表记布局；扁平名称只用于链接映射与人员搜索。
+function normalizeStaffNames(names, flatNames = []){
+  const list = Array.isArray(names) ? names : (names == null ? [] : [names]);
+  return list.flatMap(value => {
+    if(typeof value === "string"){
+      if(isSpacerMarker(value)) return [{ kind: "spacer" }];
+      const label = value.trim();
+      const index = flatNames.push(label) - 1;
+      return [{ kind: "person", label, index }];
+    }
+    if(isPlainObject(value) && typeof value.studio === "string" && value.studio.trim() && Array.isArray(value.members)){
+      const label = value.studio.trim();
+      const index = flatNames.push(label) - 1;
+      const members = normalizeStaffNames(value.members, flatNames);
+      return [{ kind: "studio", label, index, members }];
+    }
+    return [];
+  });
+}
 function normalizeStaffEntry(entry){
   if(entry && entry._normalizedStaffEntry) return entry;
   if(entry === null || entry === undefined) return makeStaffEntry({ spacer: true });
   if(typeof entry === "string") return isSpacerMarker(entry) ? makeStaffEntry({ spacer: true }) : makeStaffEntry({ invalid: true });
-  if(isPlainObject(entry)) return makeStaffEntry({ invalid: true });
+  if(isPlainObject(entry)){
+    return typeof entry.section === "string" && entry.section.trim()
+      ? makeStaffEntry({ section: entry.section.trim() })
+      : makeStaffEntry({ invalid: true });
+  }
 
   if(Array.isArray(entry)){
     if(entry.length === 0 || isSpacerMarker(entry[0])) return makeStaffEntry({ spacer: true });
 
     const [role, names, ...options] = entry;
+    const flatNames = [];
+    const nameNodes = normalizeStaffNames(names, flatNames);
     const normalized = makeStaffEntry({
       role: String(role || ""),
       split_role: true,
-      names: Array.isArray(names) ? names : (names === undefined || names === null ? [] : [names])
+      names: flatNames,
+      nameNodes
     });
 
     options.forEach(opt => {
@@ -439,8 +465,7 @@ function normalizeStaffEntry(entry){
 }
 function getStaffNames(entry){
   const item = normalizeStaffEntry(entry);
-  if(Array.isArray(item.names)) return item.names.map(n=>String(n||"").trim()).filter(Boolean);
-  return [];
+  return Array.isArray(item.names) ? item.names : [];
 }
 function getEpisodeStaff(ep){
   return Array.isArray(ep?.staff) ? ep.staff.map(normalizeStaffEntry) : [];
@@ -462,6 +487,46 @@ function resolveStaffSlug(rawLabel, index, entry){
        : (localMap && localMap[rawLabel]) ? String(localMap[rawLabel])
        : (localMap && localMap[cName]) ? String(localMap[cName])
        : cName;
+}
+function getStaffDisplayTokens(entry){
+  return getStaffNames(entry).map((label, index) => ({
+    label, cleanLabel: cleanName(label), slug: resolveStaffSlug(label, index, entry)
+  }));
+}
+function renderStaffNameNodes(nodes, tokens, workSlug){
+  const tokenHTML = node => {
+    const token = tokens[node.index];
+    if(!token) return "";
+    const cleanText = token.cleanLabel || token.label;
+    const remark = token.label.replace(cleanText, "").trim();
+    const onClick = `saveWorkScroll(${JSON.stringify(workSlug || "")});setTempPersonLabel(${JSON.stringify(token.slug)},${JSON.stringify(cleanText)})`;
+    return `<span class="person-token"><a href="#/person/${encodeURIComponent(token.slug)}" class="person-link" onclick="${escapeHTML(onClick)}">${escapeHTML(cleanText)}</a>${remark ? `<span>${escapeHTML(remark)}</span>` : ""}</span>`;
+  };
+  const render = list => {
+    let html = "", run = [];
+    const flush = () => {
+      if(run.length) html += `<span class="staff-name-run">${run.join("")}</span>`;
+      run = [];
+    };
+    list.forEach(node => {
+      if(node.kind === "person"){
+        run.push(tokenHTML(node));
+      }else if(node.kind === "studio"){
+        flush();
+        html += `<div class="staff-name-group" role="group" aria-label="${escapeHTML(node.label)}"><div class="staff-group-title">${tokenHTML(node)}</div><div class="staff-group-members">${render(node.members)}</div></div>`;
+      }else if(node.kind === "spacer"){
+        flush();
+        html += `<div class="staff-name-spacer" aria-hidden="true"></div>`;
+      }
+    });
+    flush();
+    return html;
+  };
+  return render(nodes || []);
+}
+function renderStaffNamesHTML(entry, workSlug){
+  const item = normalizeStaffEntry(entry);
+  return renderStaffNameNodes(item.nameNodes, getStaffDisplayTokens(item), workSlug);
 }
 function getOriginalTitle(w){
   return (
@@ -485,6 +550,10 @@ function collectMainStaffColumns(work){
       }
 
       if(entry.invalid) return;
+      if(entry.section){
+        result[idx].push({ section: entry.section });
+        return;
+      }
 
       const role = String(entry?.role || "");
       const names = getStaffNames(entry);
@@ -494,7 +563,7 @@ function collectMainStaffColumns(work){
         return { label: rawLabel, cleanLabel: cName, slug: slug };
       });
 
-      if (role || tokens.length){ result[idx].push({ role, tokens, split_role: entry.split_role }); }
+      if (role || tokens.length){ result[idx].push({ role, tokens, split_role: entry.split_role, entry }); }
     });
   });
   return result;
@@ -887,39 +956,18 @@ async function renderWorkDetail(slug){
 
   const appendStaffEntryContent = (target, item, {showRole = true} = {}) => {
       const {role, tokens} = item;
+      if(item.section){
+        target.classList.add("staff-section");
+        target.textContent = item.section;
+        return;
+      }
       if (showRole) {
         const strong = document.createElement("b");
         strong.textContent = role ? role + "：" : "";
         target.appendChild(strong);
       }
-      tokens.forEach(t=>{
-        addPersonToWork(t.cleanLabel || t.label, t.slug);
-
-        const span = document.createElement("span"); 
-        span.className = "person-token";
-        span.style.whiteSpace = "nowrap";
-
-        const cleanText = t.cleanLabel || t.label;
-        const remarkText = t.label.replace(cleanText, '').trim();
-
-        const a = document.createElement("a");
-        a.href = "#/person/" + encodeURIComponent(t.slug);
-        a.textContent = cleanText; 
-        a.className = "person-link";
-        a.addEventListener("click", ()=> { 
-          saveWorkScroll(w.slug || LAST_WORK_SLUG || ""); 
-          setTempPersonLabel(t.slug, cleanText); 
-        });
-        span.appendChild(a); 
-
-        if (remarkText) {
-            const rSpan = document.createElement("span");
-            rSpan.textContent = remarkText;
-            span.appendChild(rSpan);
-        }
-
-        target.appendChild(span);
-      });
+      tokens.forEach(t => addPersonToWork(t.cleanLabel || t.label, t.slug));
+      target.insertAdjacentHTML("beforeend", renderStaffNamesHTML(item.entry, w.slug || LAST_WORK_SLUG || ""));
   };
 
   const renderCol = (ul, entries)=>{
@@ -949,7 +997,15 @@ async function renderWorkDetail(slug){
       const left = col1Entries[i];
       const right = col2Entries[i];
       [left, right].forEach(item => {
-        if (!item || item.spacer) return;
+        if (!item) return;
+        if(item.spacer || item.section){
+          const marker = document.createElement("div");
+          marker.className = item.spacer ? "staff-spacer" : "staff-section";
+          if(item.section) marker.textContent = item.section;
+          else marker.setAttribute("aria-hidden", "true");
+          mobileGrid.appendChild(marker);
+          return;
+        }
         const entry = document.createElement("div");
         entry.className = "staff-mobile-entry";
         const role = document.createElement("dt");
@@ -1025,41 +1081,19 @@ async function renderWorkDetail(slug){
                   return false;
               });
 
-              let cellHTML = "";
-              if (matchingRoles.length > 0) {
-                  const allPeople = [];
-                  const seenPeople = new Set();
+              let cellHTML = "-";
+              const hasLayout = matchingRoles.some(roleObj => roleObj.nameNodes.some(node => node.kind !== "person"));
+              if(hasLayout){
+                  cellHTML = matchingRoles.map(roleObj => renderStaffNamesHTML(roleObj, w.slug || LAST_WORK_SLUG || "")).filter(Boolean).join('<div class="staff-credit-separator"></div>') || "-";
+              }else if(matchingRoles.length){
+                  const allPeople = [], seenPeople = new Set();
                   matchingRoles.forEach(roleObj => {
-                      getStaffNames(roleObj).forEach((rawName, index) => {
-                          const cName = cleanName(rawName);
-                          const slug = resolveStaffSlug(rawName, index, roleObj);
-                          const key = `${slug}::${rawName}`;
-                          if(!seenPeople.has(key)){
-                              seenPeople.add(key);
-                              allPeople.push({ rawName, cName, slug });
-                          }
+                      getStaffDisplayTokens(roleObj).forEach(token => {
+                          const key = `${token.slug}::${token.label}`;
+                          if(!seenPeople.has(key)){ seenPeople.add(key); allPeople.push(token); }
                       });
                   });
-
-                  if (allPeople.length > 0) {
-                      allPeople.forEach(({rawName, cName, slug}, idx) => {
-                          const remarkText = rawName.replace(cName, '').trim();
-
-                          const safeSlug = slug.replace(/'/g, "\\'");
-                          const safeCName = cName.replace(/'/g, "\\'");
-                          const safeWSlug = (w.slug || LAST_WORK_SLUG || "").replace(/'/g, "\\'");
-
-                          cellHTML += `<span style="display:inline-block;">`;
-                          cellHTML += `<a href="#/person/${encodeURIComponent(slug)}" class="person-link" onclick="saveWorkScroll('${safeWSlug}'); setTempPersonLabel('${safeSlug}', '${safeCName}')">${escapeHTML(cName)}</a>`;
-                          if (remarkText) { cellHTML += `<span>${escapeHTML(remarkText)}</span>`; }
-                          if (idx < allPeople.length - 1) cellHTML += "、"; 
-                          cellHTML += `</span>`;
-                      });
-                  } else {
-                      cellHTML = "-";
-                  }
-              } else {
-                  cellHTML = "-";
+                  cellHTML = renderStaffNameNodes(allPeople.map((token, index) => ({kind:"person",index})), allPeople, w.slug || LAST_WORK_SLUG || "") || "-";
               }
               rowData.push(cellHTML);
           });
@@ -1131,28 +1165,13 @@ async function renderWorkDetail(slug){
                      <div class="ep-staff-list">`;
           const staffEntries = getEpisodeStaff(ep);
           if (staffEntries.length) {
-              staffEntries.forEach((roleObj) => {
-                  const validNames = getStaffNames(roleObj);
-                  if (validNames.length > 0 && roleObj.role) {
-                      html += `<div class="ep-staff-item">
-                                 <div class="ep-staff-role">${escapeHTML(roleObj.role)}</div>
-                                 <div class="ep-staff-names">`;
-                      validNames.forEach((rawName, nIdx) => {
-                          const cName = cleanName(rawName);
-                          const slug = resolveStaffSlug(rawName, nIdx, roleObj);
-                          const remarkText = rawName.replace(cName, '').trim();
-
-                          const safeSlug = slug.replace(/'/g, "\\'");
-                          const safeCName = cName.replace(/'/g, "\\'");
-                          const safeWSlug = (w.slug || LAST_WORK_SLUG || "").replace(/'/g, "\\'");
-
-                          html += `<span style="display:inline-block;">`;
-                          html += `<a href="#/person/${encodeURIComponent(slug)}" class="person-link" onclick="saveWorkScroll('${safeWSlug}'); setTempPersonLabel('${safeSlug}', '${safeCName}')">${escapeHTML(cName)}</a>`;
-                          if (remarkText) { html += `<span>${escapeHTML(remarkText)}</span>`; }
-                          if (nIdx < validNames.length - 1) html += "、"; 
-                          html += `</span>`;
-                      });
-                      html += `</div></div>`;
+              staffEntries.forEach(roleObj => {
+                  if(roleObj.spacer){
+                      html += '<div class="staff-spacer" aria-hidden="true"></div>';
+                  }else if(roleObj.section){
+                      html += `<div class="staff-section">${escapeHTML(roleObj.section)}</div>`;
+                  }else if(roleObj.role && getStaffNames(roleObj).length){
+                      html += `<div class="ep-staff-item"><div class="ep-staff-role">${escapeHTML(roleObj.role)}</div><div class="ep-staff-names">${renderStaffNamesHTML(roleObj, w.slug || LAST_WORK_SLUG || "")}</div></div>`;
                   }
               });
           }
